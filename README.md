@@ -1,4 +1,4 @@
-# bower-angular
+# bower-intaglio
 
 This repo is for distribution on `bower`. The source for this module is in the
 [Intaglio repository](https://github.com/VisualGuruz/intaglio).
