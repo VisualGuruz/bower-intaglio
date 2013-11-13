@@ -103,6 +103,16 @@ var BaseModel = utils.Class.extend({
 				savePromise = self._repository.create(self._model, self._data);
 			}
 			else {
+				var changes = false;
+
+				_.each(self._data, function (value, key) {
+					if (self._originalData[key] !== value)
+						changes = true;
+				});
+
+				if ( ! changes)
+					return resolve(new self._wrapper(self));
+
 				savePromise = self._repository.save(self._model, self._data);
 			}
 
@@ -248,7 +258,7 @@ var Factory = utils.Class.extend({
 	orderBy: function (field, direction) {
 		direction = direction || 'ascending';
 
-		this._findOptions.orderBy = field;
+		this._findOptions.orderBy = this._modelSchema.getProperty(field);
 		this._findOptions.direction = direction;
 
 		return this;
@@ -882,8 +892,7 @@ module.exports = {
 var RSVP = require('rsvp'),
 	_ = require('underscore'),
 	utils = require('./../../../utils'),
-	Response = require('./response'),
-	jQuery = require('jquery');
+	Response = require('./response');
 
 /**
  * Requires jQuery
@@ -975,7 +984,7 @@ var RestJqueryDriver = utils.Class.extend({
 });
 
 module.exports = RestJqueryDriver;
-},{"./../../../utils":21,"./response":16,"jquery":"9pGnth","rsvp":"psHlfu","underscore":"69U/Pa"}],16:[function(require,module,exports){
+},{"./../../../utils":21,"./response":16,"rsvp":"psHlfu","underscore":"69U/Pa"}],16:[function(require,module,exports){
 // Get dependencies
 var utils = require('./../../../utils');
 
@@ -2249,10 +2258,6 @@ module.exports = VanillaWrapper;
   module.exports = inflector;
 })( this );
 
-},{}],"jquery":[function(require,module,exports){
-module.exports=require('9pGnth');
-},{}],"9pGnth":[function(require,module,exports){
-module.exports = window.jQuery;
 },{}],"rsvp":[function(require,module,exports){
 module.exports=require('psHlfu');
 },{}],"psHlfu":[function(require,module,exports){
