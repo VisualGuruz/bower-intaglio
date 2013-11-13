@@ -103,14 +103,7 @@ var BaseModel = utils.Class.extend({
 				savePromise = self._repository.create(self._model, self._data);
 			}
 			else {
-				var changes = false;
-
-				_.each(self._data, function (value, key) {
-					if (self._originalData[key] !== value)
-						changes = true;
-				});
-
-				if ( ! changes)
+				if (self.getFieldsPendingChange().length > 0)
 					return resolve(new self._wrapper(self));
 
 				savePromise = self._repository.save(self._model, self._data);
@@ -202,6 +195,18 @@ var BaseModel = utils.Class.extend({
 				}
 			});
 		}
+	},
+
+	getFieldsPendingChange: function () {
+		var changes = [],
+			self = this;
+
+		_.each(this._data, function (value, key) {
+			if (self._originalData[key] !== value)
+				changes.push(key);
+		});
+
+		return changes;
 	}
 });
 
