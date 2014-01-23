@@ -1,5 +1,4 @@
-!function(e){"object"==typeof exports?module.exports=e():"function"==typeof define&&define.amd?define(e):"undefined"!=typeof window?window.Intaglio=e():"undefined"!=typeof global?global.Intaglio=e():"undefined"!=typeof self&&(self.Intaglio=e())}(function(){var define,module,exports;
-return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+!function(e){"object"==typeof exports?module.exports=e():"function"==typeof define&&define.amd?define(e):"undefined"!=typeof window?window.Intaglio=e():"undefined"!=typeof global?global.Intaglio=e():"undefined"!=typeof self&&(self.Intaglio=e())}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var RSVP = require('rsvp');
 
 RSVP.configure('onerror', function (error) {
@@ -10,42 +9,151 @@ RSVP.configure('onerror', function (error) {
 module.exports = {
 	repositories: require('./lib/repositories'),
 	ORM: require('./lib/orm'),
-	wrappers: require('./lib/wrappers'),
+	decorators: require('./lib/decorators'),
 	utils: require('./lib/utils')
 };
-},{"./lib/orm":4,"./lib/repositories":14,"./lib/utils":21,"./lib/wrappers":23,"rsvp":"psHlfu"}],2:[function(require,module,exports){
+},{"./lib/decorators":3,"./lib/orm":6,"./lib/repositories":11,"./lib/utils":24,"rsvp":"psHlfu"}],2:[function(require,module,exports){
+var _ = require('underscore');
+
+var EmberDecorator = {
+	unknownProperty: function (key) {
+		return this.get(key);
+	},
+
+	setUnknownProperty: function (key, value) {
+		Ember.propertyWillChange(this, key);
+
+		this.set(key, value);
+
+		Ember.propertyDidChange(this, key);
+
+		return this;
+	},
+
+	reload: function () {
+		// Get a list of the changed values
+		var currentData = this.getData(),
+			self = this;
+
+		this.reload().then(function (obj) {
+			var newData = obj.getData(),
+				changedFields = [];
+
+			_.each(newData, function (value, key) {
+				if (currentData[key] !== value)
+					changedFields.push(key);
+			});
+
+			_.each(changedFields, function (key) {
+				Ember.propertyWillChange(self, key);
+				Ember.propertyDidChange(self, key);
+			});
+		});
+	}
+};
+
+module.exports = EmberDecorator;
+},{"underscore":"69U/Pa"}],3:[function(require,module,exports){
+module.exports = {
+	Ember: require('./ember')
+};
+},{"./ember":2}],4:[function(require,module,exports){
 var utils = require('./../utils'),
 	RSVP = require('rsvp'),
 	_ = require('underscore');
 
+/**
+ * The BaseModel is what all Intaglio objects are extended from. It provides the base functionality
+ * required to make a functioning ORM.
+ * @type {*}
+ */
 var BaseModel = utils.Class.extend({
+	/**
+	 * Stores the schema of the object
+	 */
 	_model: null,
-	_repository: null,
-	_logger: null,
-	_wrapper: null,
 
+	/**
+	 * Stores the repository that the object uses for persistence
+	 */
+	_repository: null,
+
+	/**
+	 * Stores an instance of the logging module to allow for different logging implementations.
+	 */
+	_logger: null,
+
+	/**
+	 * Unique ID used to track the objects that have been created in the system
+	 */
 	_instanceId: null,
+
+	/**
+	 * Stores the data of the object as it was when it was last loaded from persistence to use
+	 * to check for deltas on `save()`.
+	 */
 	_originalData: null,
+
+	/**
+	 * Current data of the model.
+	 */
 	_data: null,
+
+	/**
+	 * Stores all the event listeners registered with the object
+	 */
 	_events: null,
+
+	/**
+	 * Stores extended functionality to the model. Not Yet Implemented.
+	 */
 	_extensions: null,
+
+	/**
+	 * Flag for maintaining the state of if the model is in persistence.
+	 */
 	_isNew: true,
+
+	/**
+	 * Flag for maintaining the state of the model being deleted
+	 */
 	_isDeleted: false,
 
+	/**
+	 * Flag for maintaining the state of the model's instantiation
+	 */
+	_isSetup: false,
+
+	/**
+	 * Initialization function. Throws an exception as the class is abstract.
+	 */
 	init: function () {
 		throw new utils.Exceptions.AbstractClassException();
 	},
 
+	/**
+	 * Simple event registration.
+	 * @param event
+	 * @param callback
+	 */
 	on: function (event, callback) {
+		utils.assert("Callback must be a function!", _.isFunction(callback));
+
 		// Make sure object isn't deleted
 		this._checkDeleted();
 
+		// Setup the event container
 		if (this._events[event] === undefined)
 			this._events[event] = [];
 
+		// Store the event handler
 		this._events[event].push(callback);
 	},
 
+	/**
+	 * Fires any event handlers for an event.
+	 * @param event
+	 */
 	trigger: function (event) {
 		// Make sure object isn't deleted
 		this._checkDeleted();
@@ -56,11 +164,17 @@ var BaseModel = utils.Class.extend({
 
 		var self = this;
 
+		// Fire each callback registered to the event
 		_.each(this._events[event], function (callback) {
 			callback.apply(self);
 		});
 	},
 
+	/**
+	 * Gets data from the model.
+	 * @param key
+	 * @returns {*}
+	 */
 	get: function (key) {
 		// Make sure object isn't deleted
 		this._checkDeleted();
@@ -100,19 +214,19 @@ var BaseModel = utils.Class.extend({
 
 			// Do a create if it's new
 			if (self._isNew) {
-				savePromise = self._repository.create(self._model, self._data);
+				savePromise = self._repository.create(self._model, self._model.translateObjectToRepository(self._data));
 			}
 			else {
 				if (self.getFieldsPendingChange().length === 0)
-					return resolve(new self._wrapper(self));
+					return resolve(utils.decorateObject(self, self._orm.getDecorations()));
 
-				savePromise = self._repository.save(self._model, self._data);
+				savePromise = self._repository.save(self._model, self._model.translateObjectToRepository(self._originalData), self._model.translateObjectToRepository(self._data));
 			}
 
 			savePromise.then(function (data) {
-				self._parseData(data);
+				self._parseData(self._model.translateObjectToOrm(data));
 
-				return resolve(new self._wrapper(self));
+				return resolve(utils.decorateObject(self, self._orm.getDecorations()));
 			}, reject);
 		});
 	},
@@ -130,7 +244,7 @@ var BaseModel = utils.Class.extend({
 				// Mark it as dead
 				self._isDeleted = true;
 
-				return resolve();
+				return resolve(self);
 			}, reject);
 		});
 	},
@@ -149,10 +263,10 @@ var BaseModel = utils.Class.extend({
 		return new RSVP.Promise(function (resolve, reject) {
 			var conditions = [];
 
-			self._repository.reload(self._model, self._data).then(function (data) {
-				self._parseData(data);
+			self._repository.reload(self._model, self._model.translateObjectToRepository(self._data)).then(function (data) {
+				self._parseData(self._model.translateObjectToOrm(data));
 				
-				return resolve(new self._wrapper(self));
+				return resolve(utils.decorateObject(self, self._orm.getDecorations()));
 			}, reject);
 		});
 	},
@@ -173,16 +287,58 @@ var BaseModel = utils.Class.extend({
 		return this._model;
 	},
 
+	getFieldsPendingChange: function () {
+		var changes = [],
+			self = this;
+
+		_.each(this._data, function (value, key) {
+			if (self._originalData[key] !== value)
+				changes.push(key);
+		});
+
+		return changes;
+	},
+
+	setup: function (instanceId, data, isNew) {
+		if (this._isSetup)
+			throw new utils.Exceptions.ModelInstantiationException("Cannot call setup() on a model that has already been setup!");
+
+		var self = this;
+
+		// Setup the instance vars
+		this._originalData = {};
+		this._data = {};
+		this._events = {};
+		this._conditions = [];
+		this._isSetup = true;
+		this._instanceId = instanceId;
+
+		// Setup the fields
+		_.each(this._model.getProperties(), function (property) {
+			self._originalData[property.getName()] = null;
+			self._data[property.getName()] = null;
+		});
+
+		this._parseData(data, isNew);
+	},
+
+	getClass: function () {
+		return this._orm.getClass(this._model.getName());
+	},
+
 	_checkDeleted: function () {
 		if (this._isDeleted)
 			throw new utils.Exceptions.DeletedModelException();
 	},
 
-	_parseData: function (data){
+	_parseData: function (data, isNew){
 		var self = this;
 
+		if (isNew === undefined)
+			isNew = true;
+
 		// Mark it as no longer new
-		self._isNew = false;
+		self._isNew = isNew;
 
 		// If there is any data, set it up
 		if (data) {
@@ -195,18 +351,6 @@ var BaseModel = utils.Class.extend({
 				}
 			});
 		}
-	},
-
-	getFieldsPendingChange: function () {
-		var changes = [],
-			self = this;
-
-		_.each(this._data, function (value, key) {
-			if (self._originalData[key] !== value)
-				changes.push(key);
-		});
-
-		return changes;
 	}
 });
 
@@ -214,7 +358,7 @@ var BaseModel = utils.Class.extend({
 
 module.exports = BaseModel;
 
-},{"./../utils":21,"rsvp":"psHlfu","underscore":"69U/Pa"}],3:[function(require,module,exports){
+},{"./../utils":24,"rsvp":"psHlfu","underscore":"69U/Pa"}],5:[function(require,module,exports){
 var utils = require('./../utils'),
 	RSVP = require('rsvp'),
 	_ = require('underscore'),
@@ -236,7 +380,7 @@ var Factory = utils.Class.extend({
 
 		this._model = orm._models[modelName];
 		this._modelName = modelName;
-		this._modelSchema = orm._getModelSchema(modelName);
+		this._modelSchema = orm.getSchema().getModel(modelName);
 		this._repository = orm._repository;
 		this._logger = orm._logger;
 		this._orm = orm;
@@ -270,7 +414,7 @@ var Factory = utils.Class.extend({
 	},
 
 	create: function (data) {
-		return new this._orm._dataWrapper(new this._model(data));
+		return utils.instantiateModel(this._orm, this._model, data);
 	},
 
 	find: function (id) {
@@ -280,12 +424,11 @@ var Factory = utils.Class.extend({
 			if (id !== undefined) {
 				if (_.isObject(id)) {
 					_.each(id, function (value, key) {
-						self.where(key).equals(value);
+						self.where(key).isEqual(value);
 					});
 				}
-
 				else {
-					self.where(self._modelSchema.getPrimaryKey()[0]).isEqual(id);
+					self.where(self._modelSchema.getPrimaryKey()[0].getName()).isEqual(id);
 				}
 			}
 
@@ -295,11 +438,11 @@ var Factory = utils.Class.extend({
 				if (result.length === 0)
 					return resolve(null);
 
-				var model = new self._model(result[0]);
+				var model = utils.instantiateModel(self._orm, self._model, self._modelSchema.translateObjectToOrm(result[0]), false);
 
 				model._isNew = false;
 
-				return resolve(new self._orm._dataWrapper(model));
+				return resolve(model);
 			}, reject);
 		});
 	},
@@ -308,18 +451,18 @@ var Factory = utils.Class.extend({
 		var self = this;
 
 		return new RSVP.Promise(function (resolve, reject) {
-			var query = self._repository.find(self._orm._getModelSchema(self._modelName), self._findOptions, self._conditions);
+			var query = self._repository.find(self._modelSchema, self._findOptions, self._conditions);
 
 			query.then(function (result) {
 				var items = [];
 
 				_.each(result, function (data) {
 					try {
-						var newModel = new self._model(data);
+						var model = utils.instantiateModel(self._orm, self._model, self._modelSchema.translateObjectToOrm(data), false);
 
-						newModel._isNew = false;
+						model._isNew = false;
 						
-						items.push(new self._orm._dataWrapper(newModel));
+						items.push(model);
 					}
 					catch (err) {
 						reject(err);
@@ -337,7 +480,7 @@ var Factory = utils.Class.extend({
 });
 
 module.exports = Factory;
-},{"./../utils":21,"./where":11,"rsvp":"psHlfu","underscore":"69U/Pa"}],4:[function(require,module,exports){
+},{"./../utils":24,"./where":8,"rsvp":"psHlfu","underscore":"69U/Pa"}],6:[function(require,module,exports){
 var RSVP = require('rsvp'),
 	_ = require('underscore'),
 	ORM = require('./orm'),
@@ -346,17 +489,11 @@ var RSVP = require('rsvp'),
 // Base API object. Contains the pass-thrus for other parts of the orm
 var api = {};
 
-api.create = function create(options, repository, dataWrapper, loggerModule) {
-	// Handle omitted options
-	if (options instanceof repositories.abstract) {
-		loggerModule = dataWrapper;
-		dataWrapper = repository;
-		repository = options;
-		options = {};
-	}
-
+api.create = function create(repository, loggerModule) {
 	return new RSVP.Promise(function (resolve, reject) {
-		var newORM = new ORM(resolve, reject, options, repository, dataWrapper, loggerModule);
+		var orm = new ORM(repository, loggerModule);
+
+		orm.ready().then(resolve, reject);
 	});
 };
 
@@ -376,7 +513,7 @@ api.ready = function ready(ormHash) {
 };
 
 module.exports = api;
-},{"../repositories":14,"./orm":5,"rsvp":"psHlfu","underscore":"69U/Pa"}],5:[function(require,module,exports){
+},{"../repositories":11,"./orm":7,"rsvp":"psHlfu","underscore":"69U/Pa"}],7:[function(require,module,exports){
 var RSVP = require('rsvp'),
 	_ = require('underscore'),
 	utils = require('./../utils'),
@@ -387,28 +524,62 @@ var RSVP = require('rsvp'),
 var nextId = 0;
 
 var ORM = utils.Class.extend({
+	/**
+	 * Instance of the repository the ORM will use to retrieve data
+	 * @member {Repository}
+	 */
 	_repository: null,
-	_dataWrapper: null,
-	_options: null,
+
+	/**
+	 * Array of decorator objects used to decorate all models instantiated via the ORM.
+	 * @member {Array}
+	 */
+	_decorations: null,
+
+	/**
+	 * Logger module used with the ORM. Should follow the console object's contract.
+	 * @member {Object}
+	 */
 	_logger: null,
-	_models: null,
+
+	/**
+	 * Object that contains all the classes for the models.
+	 * @member {Object}
+	 */
+	_classes: null,
+
+	/**
+	 * The schema object that the ORM uses to build the classes and talk to the repository.
+	 * @member {Schema}
+	 */
 	_schema: null,
 
-	init: function (resolve, reject, options, repository, dataWrapper, loggerModule) {
-		var self = this;
+	/**
+	 * The promise that is issued from parsing the schema from the repository. Used to track whether or not the ORM is
+	 * ready to use yet.
+	 * @member
+	 */
+	_readyPromise: null,
 
+	/**
+	 * Constructor for the ORM Class.
+	 *
+	 * @param repository
+	 * @param loggerModule
+	 */
+	init: function (repository, loggerModule) {
 		utils.assert('You must supply a repository to use the ORM!', repository !== undefined);
 
 		this._repository = repository;
-		this._dataWrapper = dataWrapper || require('./../wrappers').vanilla;
 		this._logger = loggerModule || console;
-		this._options = options;
 		this._models = {};
+		this._decorations = [];
 
-		// Get the schema from the repository and parse it
-		parseRepositorySchema(this).then(function () {
-			resolve(self);
-		}, reject);
+		parseRepositorySchema(this);
+	},
+
+	ready: function () {
+		return this._readyPromise;
 	},
 
 	factory: function (modelName) {
@@ -417,26 +588,38 @@ var ORM = utils.Class.extend({
 		return new Factory(this, modelName);
 	},
 
+	/**
+	 * Extends the classes that the ORM instantiates from the models. If overriding an existing method, the method's
+	 * interface should match the original and should call this._super() so that existing contracts aren't broken and
+	 * all base functionality is run. Failure to do this might break the ORM.
+	 *
+	 * @param {string} modelName Name of the model being extended
+	 * @param {object} object Object of methods and properties that will extend the model
+	 */
 	extend: function (modelName, object) {
 		var model = this._models[modelName];
 
-		_.each(object, function (value) {
-			utils.assert("Only functions are supported for extensions at this time.", _.isFunction(value));
-		});
+		this._models[modelName] = model.extend(object);
+	},
 
-		this._models[modelName] = model.extend({
-			_extensions: object
-		});
+	decorate: function (decorator) {
+		this._decorations.push(decorator);
+	},
+
+	getDecorations: function () {
+		return this._decorations;
 	},
 
 	getSchema: function () {
 		return this._schema;
 	},
 
-	_getModelSchema: function (modelName) {
-		utils.assert('Could not find the model `'+modelName+'`!', this._models[modelName] !== undefined);
+	getRepository: function () {
+		return this._repository;
+	},
 
-		return this._schema.getModel(modelName);
+	getClass: function (modelName) {
+		return this._models[modelName];
 	}
 });
 
@@ -448,7 +631,7 @@ module.exports = ORM;
  */
 
 function parseRepositorySchema(orm) {
-	return new RSVP.Promise(function (resolve, reject) {
+	orm._readyPromise = new RSVP.Promise(function (resolve, reject) {
 		orm._repository.getSchema().then(function (schema) {
 			orm._schema = schema;
 
@@ -463,265 +646,21 @@ function parseRepositorySchema(orm) {
 
 function generateModel(orm, model) {
 	return BaseModel.extend({
-		_model: model,
+		_orm: orm,
 		_repository: orm._repository,
+		_model: model,
 		_logger: orm._logger,
-		_wrapper: orm._dataWrapper,
 		
-		_getClass: function () {
-			return orm._models[this._model.getName()];
-		},
-
-		init: function (data) {
-			var self = this;
-			
-			// Setup the instance vars
-			this._originalData = {};
-			this._data = {};
-			this._events = {};
-			this._conditions = [];
-
+		init: function (data, isNew) {
 			// Set the instance ID for tracking
-			this._instanceId = nextId;
+			this.setup(nextId, data, isNew);
 
 			// Bump the next id
 			nextId++;
-
-			// Setup the fields
-			_.each(this._model.getProperties(), function (property) {
-				self._originalData[property.getName()] = null;
-				self._data[property.getName()] = null;
-			});
-
-			// If there is any data, set it up
-			if (data) {
-				_.each(data, function (value, key) {
-					var property = self._model.getProperty(key);
-
-					if (property !== undefined){
-						self._originalData[property.getName()] = value;
-						self._data[property.getName()] = value;
-					}
-				});
-			}
 		}
 	});
 }
-},{"./../utils":21,"./../wrappers":23,"./basemodel":2,"./factory":3,"rsvp":"psHlfu","underscore":"69U/Pa"}],6:[function(require,module,exports){
-var utils = require('./../../utils'),
-	_ = require('underscore'),
-	inflection = require('inflection');
-
-module.exports = utils.Class.extend({
-	_name: null,
-	_originalName: null,
-	_metadata: null,
-
-	init: function (name, metadata) {
-		// Set the name of the object
-		this._setName(name);
-
-		// Store the metadata
-		this._metadata = metadata || {};
-
-		// We don't actually want to instantiate this object, as it is abstract.
-		throw new utils.Exceptions.AbstractClassException();
-	},
-
-	getName: function () {
-		return this._name;
-	},
-
-	getPluralizedName: function () {
-		var parts = inflection.underscore(this.getName()).split('_');
-
-		if (parts.length === 1)
-			parts[0] = inflection.pluralize(parts[0]);
-		else
-			parts[parts.length - 1] = inflection.pluralize(parts[parts.length - 1]);
-
-		return inflection.camelize(parts.join('_'), true);
-	},
-
-	getOriginalName: function () {
-		return this._originalName;
-	},
-
-	getMetadata: function () {
-		return this._metadata;
-	},
-
-	_setName: function (name) {
-		utils.assert('`name` is a required field!', name !== undefined);
-		utils.assert('`name` must be a string!', _.isString(name));
-
-		this._name = utils.normalizeName(name);
-		this._originalName = name;
-	}
-});
-},{"./../../utils":21,"inflection":26,"underscore":"69U/Pa"}],7:[function(require,module,exports){
-module.exports = {
-	Abstract: require('./abstract'),
-	Schema: require('./schema'),
-	Model: require('./model'),
-	Property: require('./property')
-};
-},{"./abstract":6,"./model":8,"./property":9,"./schema":10}],8:[function(require,module,exports){
-var utils = require('./../../utils'),
-	_ = require('underscore'),
-	AbstractSchema = require('./abstract'),
-	Property = require('./property');
-	
-module.exports = AbstractSchema.extend({
-	_properties: null,
-
-	init: function (name, metadata) {
-		// Set the name of the object
-		this._setName(name);
-
-		// Store the metadata
-		this._metadata = metadata || {};
-
-		this._properties = {};
-	},
-
-	addProperty: function (property) {
-		utils.assert('`property` must be an instance of Schema.Property', property instanceof Property);
-		utils.assert('Property must not already be defined in the model', this._properties[property.getName()] === undefined);
-		this._properties[property.getName()] = property;
-
-		return this;
-	},
-
-	getProperty: function (name) {
-		return this._properties[utils.normalizeName(name)];
-	},
-
-	getProperties: function () {
-		return this._properties;
-	},
-
-	getPrimaryKey: function () {
-		var keys = [];
-
-		for (var key in this._properties) {
-			if (this._properties[key].isPrimaryKey())
-				keys.push(this._properties[key].getName());
-		}
-
-		return keys;
-	},
-	getJSON: function () {
-		var schema = {
-			name: this.getName(),
-			properties: {}
-		};
-
-		_.each(this.getProperties(), function (property) {
-			schema.properties[property.getName()] = property.getJSON();
-		});
-
-		return schema;
-	}
-});
-},{"./../../utils":21,"./abstract":6,"./property":9,"underscore":"69U/Pa"}],9:[function(require,module,exports){
-var utils = require('./../../utils'),
-	AbstractSchema = require('./abstract');
-
-module.exports = AbstractSchema.extend({
-	_primaryKey: false,
-	_required: false,
-	_type: "String",
-
-	init: function (name, type, metadata) {
-		// Set the name of the object
-		this._setName(name);
-		this._type = type || this._type;
-
-		// Store the metadata
-		this._metadata = metadata || {};
-	},
-
-	makePrimaryKey: function () {
-		this._primaryKey = true;
-	},
-
-	isPrimaryKey: function () {
-		return this._primaryKey;
-	},
-
-	makeRequired: function () {
-		this._required = true;
-	},
-
-	isRequired: function () {
-		return this._required;
-	},
-
-	getType: function () {
-		return this._type;
-	},
-
-	getJSON: function () {
-		return {
-			name: this.getName(),
-			type: this.getType(),
-			primaryKey: this.isPrimaryKey(),
-			required: this.isRequired()
-		};
-	}
-});
-},{"./../../utils":21,"./abstract":6}],10:[function(require,module,exports){
-var utils = require('./../../utils'),
-	_ = require('underscore'),
-	SchemaModel = require('./model');
-
-module.exports = utils.Class.extend({
-	_models: null,
-
-	init: function () {
-		this._models = {};
-	},
-
-	addModel: function (model) {
-		utils.assert('`model` must be an instance of Schema.Model', model instanceof SchemaModel);
-		utils.assert('Model must not already be defined in the schema', this._models[model.getName()] === undefined);
-
-		this._models[model.getName()] = model;
-
-		return this;
-	},
-
-	getModel: function (name) {
-		// Normalize the name so that it works from either direction
-		return this._models[utils.normalizeName(name)];
-	},
-
-	getModels: function () {
-		return this._models;
-	},
-
-	getModelNames: function () {
-		var names = [];
-
-		_.each(this._models, function (value) {
-			names.push(value.getName());
-		});
-
-		return names;
-	},
-
-	getJSON: function () {
-		var schema = {};
-
-		_.each(this.getModels(), function (model) {
-			schema[model.getName()] = model.getJSON();
-		});
-
-		return schema;
-	}
-});
-},{"./../../utils":21,"./model":8,"underscore":"69U/Pa"}],11:[function(require,module,exports){
+},{"./../utils":24,"./basemodel":4,"./factory":5,"rsvp":"psHlfu","underscore":"69U/Pa"}],8:[function(require,module,exports){
 var utils = require('./../utils'),
 	RSVP = require('rsvp'),
 	_ = require('underscore');
@@ -796,14 +735,14 @@ var Where = utils.Class.extend({
 });
 
 module.exports = Where;
-},{"./../utils":21,"rsvp":"psHlfu","underscore":"69U/Pa"}],12:[function(require,module,exports){
+},{"./../utils":24,"rsvp":"psHlfu","underscore":"69U/Pa"}],9:[function(require,module,exports){
 var RSVP = require('rsvp'),
-	utils = require('./../../utils');
+	utils = require('./../../utils'),
+	_ = require('underscore');
 
 var AbstractRepository = utils.Class.extend({
 	_options: null,
 	_logger: null,
-	_db: null,
 
 	// Include the where functions
 	where: null,
@@ -814,44 +753,32 @@ var AbstractRepository = utils.Class.extend({
 	},
 
 	// Should return a promise interface
-	getSchema: function () {
-		return new RSVP.Promise(function (resolve, reject) {
-
-		});
-	},
+	getSchema: function () {},
 	
 	// Should return a promise interface
-	find: function (model, options, conditions) {
-		return new RSVP.Promise(function (resolve, reject) {
-
-		});
-	},
+	find: function (model, options, conditions) {},
 
 	// Should return a promise interface
-	create: function (model, data) {
-		return new RSVP.Promise(function (resolve, reject) {
-
-		});
-	},
+	create: function (model, data) {},
 
 	// Should return a promise interface
-	save: function (model, data, primaryKey) {
-		return new RSVP.Promise(function (resolve, reject) {
-
-		});
-	},
+	save: function (model, data, primaryKey) {},
 
 	// Should return a promise interface
-	delete: function (model, primaryKey) {
-		return new RSVP.Promise(function (resolve, reject) {
+	delete: function (model, primaryKey) {},
 
+	_validateFields: function (model, obj) {
+		_.each(model.getProperties(), function (property) {
+			if (property.isRequired())
+				if ( ! _.has(obj, property.getOriginalName()) || obj[property.getOriginalName()] === null)
+					throw new utils.Exceptions.ValidationException('Object missing required field `'+property.getName()+'`!');
 		});
 	}
 });
 
 // Export the class
 module.exports = AbstractRepository;
-},{"./../../utils":21,"rsvp":"psHlfu"}],13:[function(require,module,exports){
+},{"./../../utils":24,"rsvp":"psHlfu","underscore":"69U/Pa"}],10:[function(require,module,exports){
 var utils = require('./../../utils');
 
 var AbstractCondition = utils.Class.extend({
@@ -859,9 +786,6 @@ var AbstractCondition = utils.Class.extend({
 	value: null,
 
 	init: function (field, value) {
-		this.field = field;
-		this.value = value;
-
 		throw new utils.Exceptions.AbstractClassException();
 	}
 });
@@ -886,13 +810,13 @@ module.exports = {
 
 	isNotNull: AbstractCondition.extend()
 };
-},{"./../../utils":21}],14:[function(require,module,exports){
+},{"./../../utils":24}],11:[function(require,module,exports){
 module.exports = {
 	abstract: require('./abstract/repository'),
 	mysql: require('./mysql'),
 	rest: require('./rest')
 };
-},{"./abstract/repository":12,"./mysql":25,"./rest":17}],15:[function(require,module,exports){
+},{"./abstract/repository":9,"./mysql":25,"./rest":15}],12:[function(require,module,exports){
 // Get dependencies
 var RSVP = require('rsvp'),
 	_ = require('underscore'),
@@ -989,7 +913,106 @@ var RestJqueryDriver = utils.Class.extend({
 });
 
 module.exports = RestJqueryDriver;
-},{"./../../../utils":21,"./response":16,"rsvp":"psHlfu","underscore":"69U/Pa"}],16:[function(require,module,exports){
+},{"./../../../utils":24,"./response":14,"rsvp":"psHlfu","underscore":"69U/Pa"}],13:[function(require,module,exports){
+// Get dependencies
+var RSVP = require('rsvp'),
+	_ = require('underscore'),
+	utils = require('./../../../utils'),
+	request = require('request'),
+	Response = require('./response');
+
+var RestNodeDriver = utils.Class.extend({
+	logger: null,
+	baseUrl: null,
+
+	init: function (options, loggerModule) {
+		// Validate the input
+		utils.assert('`options` must be an object!', _.isObject(options));
+		utils.assert('Options must have a baseUrl string!', _.isString(options.baseUrl));
+
+		this.baseUrl = options.baseUrl;
+
+		// Bring in the logger
+		this.logger = loggerModule || console;
+	},
+
+	get: function (url, headers) {
+		var self = this;
+		headers = headers || {};
+		
+		return new RSVP.Promise(function (resolve, reject) {
+			request({
+				url: self.baseUrl+url,
+				headers: headers,
+				method: 'GET'
+			}, function (err, response, body) {
+				if (err)
+					reject(err);
+
+				resolve(new Response(JSON.parse(body), response.statusCode, this.logger));
+			});
+		});
+	},
+
+	post: function (url, body, headers) {
+		var self = this;
+		headers = headers || {};
+		
+		return new RSVP.Promise(function (resolve, reject) {
+			request({
+				url: self.baseUrl+url,
+				headers: headers,
+				method: 'POST',
+				json: body,
+			}, function (err, response, body) {
+				if (err)
+					reject(err);
+
+				resolve(new Response(body, response.statusCode, this.logger));
+			});
+		});
+	},
+
+	put: function (url, body, headers) {
+		var self = this;
+		headers = headers || {};
+		
+		return new RSVP.Promise(function (resolve, reject) {
+			request({
+				url: self.baseUrl+url,
+				headers: headers,
+				method: 'PUT',
+				json: body,
+			}, function (err, response, body) {
+				if (err)
+					reject(err);
+
+				resolve(new Response(body, response.statusCode, this.logger));
+			});
+		});
+	},
+
+	delete: function (url, headers) {
+		var self = this;
+		headers = headers || {};
+		
+		return new RSVP.Promise(function (resolve, reject) {
+			request({
+				url: self.baseUrl+url,
+				headers: headers,
+				method: 'DELETE'
+			}, function (err, response, body) {
+				if (err)
+					reject(err);
+
+				resolve(new Response(body, response.statusCode, this.logger));
+			});
+		});
+	},
+});
+
+module.exports = RestNodeDriver;
+},{"./../../../utils":24,"./response":14,"request":25,"rsvp":"psHlfu","underscore":"69U/Pa"}],14:[function(require,module,exports){
 // Get dependencies
 var utils = require('./../../../utils');
 
@@ -1012,17 +1035,12 @@ var ResponseObject = utils.Class.extend({
 });
 
 module.exports = ResponseObject;
-},{"./../../../utils":21}],17:[function(require,module,exports){
+},{"./../../../utils":24}],15:[function(require,module,exports){
 var _ = require('underscore'),
 	RSVP = require('rsvp'),
 	AbstractRepository = require('./../abstract/repository'),
 	utils = require('./../../utils'),
-	Schema = require('./../../orm/schema'),
-
-	// Trickery to get browserify to pull in this file
-	driver = {
-		jquery: require('./driver/jquery')
-	};
+	Schema = require('./../../schema');
 
 var REST = AbstractRepository.extend({
 	// Include the where functions
@@ -1030,15 +1048,11 @@ var REST = AbstractRepository.extend({
 	_schemaPromise: null,
 	_driver: null,
 
-	init: function (options, loggerModule, driverModule) {
-		utils.assert('`options` must be an object!', _.isObject(options));
-		utils.assert('`options` must provide a driver to use', options.driver !== undefined);
-
-		this._options = options;
+	init: function (driverModule, loggerModule) {
+		utils.assert("A driver must be provided!", driverModule !== undefined)
 		this._logger = loggerModule || console;
-		driver = driverModule || require('./driver/'+options.driver);
 
-		this._driver = new driver(this._options, this._logger);
+		this._driver = driverModule;
 		this.where = require('./where');
 	},
 
@@ -1101,7 +1115,7 @@ var REST = AbstractRepository.extend({
 					if (response.statusCode !== 200)
 						return resolve([]);
 
-					resolve([response.data]);
+					return resolve([response.data]);
 				}, reject);
 			}
 			else {
@@ -1130,7 +1144,7 @@ var REST = AbstractRepository.extend({
 		var self = this;
 
 		return new RSVP.Promise(function (resolve, reject) {
-			validateFields(model, data);
+			self._validateFields(model, data);
 
 			var dataKeys = _.keys(data),
 				rawData = {},
@@ -1145,29 +1159,21 @@ var REST = AbstractRepository.extend({
 				var conditions = [];
 
 				_.each(model.getPrimaryKey(), function (value) {
-					if (value == 'id' && data[value] === null) {
-						conditions.push(new self.where.isEqual(model.getProperty(value).getOriginalName(), result.data.id));
-					}
+					if (value.getOriginalName() === 'id' && _.isEmpty(data[value.getOriginalName()]))
+						conditions.push(new self.where.isEqual(value.getOriginalName(), result.data.id));
+
 					else
-						conditions.push(new self.where.isEqual(model.getProperty(value).getOriginalName(), data[value]));
+						conditions.push(new self.where.isEqual(value.getOriginalName(), data[value.getOriginalName()]));
 				});
 
 				self.find(model, {}, conditions).then(function (newData) {
 					return resolve(newData[0]);
 				}, reject);
 			}, reject);
-
-			function validateFields(model, obj) {
-				_.each(model.getProperties(), function (property) {
-					if (property.isRequired())
-						if ( ! _.has(obj, property.getName()) || obj[property.getName()] === null)
-							throw new utils.Exceptions.ValidationException('Object missing required fields!');
-				});
-			}
 		});
 	},
 
-	save: function (model, data) {
+	save: function (model, originalData, data) {
 		var self = this;
 
 		return new RSVP.Promise(function (resolve, reject) {
@@ -1179,8 +1185,8 @@ var REST = AbstractRepository.extend({
 
 			// Build the where
 			_.each(model.getPrimaryKey(), function (value) {
-				pk = data[value];
-				conditions.push(new self.where.isEqual(value, data[value]));
+				pk = originalData[value.getOriginalName()];
+				conditions.push(new self.where.isEqual(value.getOriginalName(), data[value.getOriginalName()]));
 			});
 
 			url+= pk;
@@ -1190,7 +1196,7 @@ var REST = AbstractRepository.extend({
 					columns[model.getProperty(key).getOriginalName()] = data[key];
 			});
 
-			self._driver.post(url, columns).then(function (result) {
+			self._driver.put(url, columns).then(function (result) {
 				self.find(model, {limit: 1}, conditions).then(function (newData) {
 					return resolve(newData[0]);
 				}, reject);
@@ -1207,7 +1213,7 @@ var REST = AbstractRepository.extend({
 
 			// Build the where
 			_.each(model.getPrimaryKey(), function (value) {
-				url+= '/'+data[value];
+				url+= '/'+data[value.getOriginalName()];
 			});
 
 			self._driver.delete(url).then(function (result) {
@@ -1234,6 +1240,13 @@ var REST = AbstractRepository.extend({
 	}
 });
 
+// Attach the drivers
+REST.Drivers = {
+	jQuery: require('./driver/jquery'),
+	Node: require('./driver/node'),
+	Mock: require('./driver/mock')
+};
+
 // Export the class
 module.exports = REST;
 
@@ -1252,8 +1265,8 @@ function buildUrl(queryObj) {
 			orderBy: null,
 			direction: null
 		},
-		query = _.extend({}, baseQuery, queryObj);
-		url = '?'+parseWhereToQueryString(query.where);
+		query = _.extend({}, baseQuery, queryObj),
+		url = parseWhereToQueryString(query.where);
 
 	if (query.orderBy) {
 		url+='&_order='+query.orderBy;
@@ -1273,13 +1286,16 @@ function buildUrl(queryObj) {
 function parseWhereToQueryString (whereArray) {
 	var where = [];
 
+	if (whereArray === undefined || whereArray.length === 0)
+		return '';
+
 	_.each(whereArray, function (value) {
 		where.push(value.toQuery());
 	});
 
-	return where.join('&');
+	return '?'+where.join('&');
 }
-},{"./../../orm/schema":7,"./../../utils":21,"./../abstract/repository":12,"./driver/jquery":15,"./where":18,"rsvp":"psHlfu","underscore":"69U/Pa"}],18:[function(require,module,exports){
+},{"./../../schema":18,"./../../utils":24,"./../abstract/repository":9,"./driver/jquery":12,"./driver/mock":25,"./driver/node":13,"./where":16,"rsvp":"psHlfu","underscore":"69U/Pa"}],16:[function(require,module,exports){
 var AbstractWhere = require('./../abstract/where'),
 	utils = require('./../../utils'),
 	_ = require('underscore');
@@ -1386,7 +1402,275 @@ classes.isNotNull = AbstractWhere.isNotNull.extend({
 });
 
 module.exports = classes;
-},{"./../../utils":21,"./../abstract/where":13,"underscore":"69U/Pa"}],19:[function(require,module,exports){
+},{"./../../utils":24,"./../abstract/where":10,"underscore":"69U/Pa"}],17:[function(require,module,exports){
+var utils = require('./../utils'),
+	_ = require('underscore'),
+	inflection = require('inflection');
+
+module.exports = utils.Class.extend({
+	_name: null,
+	_originalName: null,
+	_metadata: null,
+
+	init: function (name, metadata) {
+		// Set the name of the object
+		this._setName(name);
+
+		// Store the metadata
+		this._metadata = metadata || {};
+
+		// We don't actually want to instantiate this object, as it is abstract.
+		throw new utils.Exceptions.AbstractClassException();
+	},
+
+	getName: function () {
+		return this._name;
+	},
+
+	getPluralizedName: function () {
+		var parts = inflection.underscore(this.getName()).split('_');
+
+		if (parts.length === 1)
+			parts[0] = inflection.pluralize(parts[0]);
+		else
+			parts[parts.length - 1] = inflection.pluralize(parts[parts.length - 1]);
+
+		return inflection.camelize(parts.join('_'), true);
+	},
+
+	getOriginalName: function () {
+		return this._originalName;
+	},
+
+	getMetadata: function () {
+		return this._metadata;
+	},
+
+	_setName: function (name) {
+		utils.assert('`name` is a required field!', name !== undefined);
+		utils.assert('`name` must be a string!', _.isString(name));
+
+		this._name = utils.normalizeName(name);
+		this._originalName = name;
+	}
+});
+},{"./../utils":24,"inflection":26,"underscore":"69U/Pa"}],18:[function(require,module,exports){
+module.exports = {
+	Abstract: require('./abstract'),
+	Schema: require('./schema'),
+	Model: require('./model'),
+	Property: require('./property')
+};
+},{"./abstract":17,"./model":19,"./property":20,"./schema":21}],19:[function(require,module,exports){
+var utils = require('./../utils'),
+	_ = require('underscore'),
+	AbstractSchema = require('./abstract'),
+	Property = require('./property');
+	
+module.exports = AbstractSchema.extend({
+	_properties: null,
+
+	init: function (name, metadata) {
+		// Set the name of the object
+		this._setName(name);
+
+		// Store the metadata
+		this._metadata = metadata || {};
+
+		this._properties = {};
+	},
+
+	addProperty: function (property) {
+		utils.assert('`property` must be an instance of Schema.Property', property instanceof Property);
+		utils.assert('Property must not already be defined in the model', this._properties[property.getName()] === undefined);
+		this._properties[property.getName()] = property;
+
+		return this;
+	},
+
+	getProperty: function (name) {
+		return this._properties[utils.normalizeName(name)];
+	},
+
+	getProperties: function () {
+		return this._properties;
+	},
+
+	getPrimaryKey: function () {
+		var keys = [];
+
+		for (var key in this._properties) {
+			if (this._properties[key].isPrimaryKey())
+				keys.push(this._properties[key]);
+		}
+
+		return keys;
+	},
+
+	getPropertyNames: function () {
+		var names = [];
+
+		for (var key in this._properties) {
+			names.push(this._properties[key].getName());
+		}
+
+		return names;
+	},
+
+
+	getPOJO: function () {
+		var schema = {
+			name: this.getName(),
+			properties: {}
+		};
+
+		_.each(this.getProperties(), function (property) {
+			schema.properties[property.getName()] = property.getPOJO();
+		});
+
+		return schema;
+	},
+
+	/**
+	 * Translates an object from the repository to one that the ORM can use
+	 * @param data
+	 * @returns {{}}
+	 */
+	translateObjectToOrm: function (data) {
+		var newObj = {},
+			self = this;
+
+		_.each(data, function (value, key) {
+			var prop = self.getProperty(key);
+
+			if (prop === undefined)
+				return;
+
+			newObj[prop.getName()] = value;
+		});
+
+		return newObj;
+	},
+
+	/**
+	 * Translates an object from the ORM to one the repository can understand
+	 * @param data
+	 * @returns {{}}
+	 */
+	translateObjectToRepository: function (data) {
+		var newObj = {},
+			self = this;
+
+		_.each(data, function (value, key) {
+			var prop = self.getProperty(key);
+
+			if (prop === undefined)
+				return;
+
+			newObj[prop.getOriginalName()] = value;
+		});
+
+		return newObj;
+	}
+});
+},{"./../utils":24,"./abstract":17,"./property":20,"underscore":"69U/Pa"}],20:[function(require,module,exports){
+var utils = require('./../utils'),
+	AbstractSchema = require('./abstract');
+
+module.exports = AbstractSchema.extend({
+	_primaryKey: false,
+	_required: false,
+	_type: "String",
+
+	init: function (name, type, metadata) {
+		// Set the name of the object
+		this._setName(name);
+		this._type = type || this._type;
+
+		// Store the metadata
+		this._metadata = metadata || {};
+	},
+
+	makePrimaryKey: function () {
+		this._primaryKey = true;
+	},
+
+	isPrimaryKey: function () {
+		return this._primaryKey;
+	},
+
+	makeRequired: function () {
+		this._required = true;
+	},
+
+	isRequired: function () {
+		return this._required;
+	},
+
+	getType: function () {
+		return this._type;
+	},
+
+	getPOJO: function () {
+		return {
+			name: this.getName(),
+			type: this.getType(),
+			primaryKey: this.isPrimaryKey(),
+			required: this.isRequired()
+		};
+	}
+});
+},{"./../utils":24,"./abstract":17}],21:[function(require,module,exports){
+var utils = require('./../utils'),
+	_ = require('underscore'),
+	SchemaModel = require('./model');
+
+module.exports = utils.Class.extend({
+	_models: null,
+
+	init: function () {
+		this._models = {};
+	},
+
+	addModel: function (model) {
+		utils.assert('`model` must be an instance of Schema.Model', model instanceof SchemaModel);
+		utils.assert('Model must not already be defined in the schema', this._models[model.getName()] === undefined);
+
+		this._models[model.getName()] = model;
+
+		return this;
+	},
+
+	getModel: function (name) {
+		// Normalize the name so that it works from either direction
+		return this._models[utils.normalizeName(name)];
+	},
+
+	getModels: function () {
+		return this._models;
+	},
+
+	getModelNames: function () {
+		var names = [];
+
+		_.each(this._models, function (value) {
+			names.push(value.getName());
+		});
+
+		return names;
+	},
+
+	getPOJO: function () {
+		var schema = {};
+
+		_.each(this.getModels(), function (model) {
+			schema[model.getName()] = model.getPOJO();
+		});
+
+		return schema;
+	}
+});
+},{"./../utils":24,"./model":19,"underscore":"69U/Pa"}],22:[function(require,module,exports){
 /* Simple JavaScript Inheritance
  * By John Resig http://ejohn.org/
  * MIT Licensed.
@@ -1454,7 +1738,7 @@ Class.extend = function(prop) {
 if(!(typeof exports === 'undefined')) {
     exports.Class = Class;
 }
-},{}],20:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var AssertionException = function (message, constructor) {
 	Error.captureStackTrace(this, constructor || this);
 	this.message = message || 'An assertion made did not pass!';
@@ -1495,12 +1779,30 @@ var UnsavedModelException = function (message, constructor) {
 inherits(UnsavedModelException, Error);
 UnsavedModelException.prototype.name = 'UnsavedModelException';
 
+var ModelInstantiationException = function (message, constructor) {
+	Error.captureStackTrace(this, constructor || this);
+	this.message = message || "There was an error instantiating your model!";
+};
+
+inherits(ModelInstantiationException, Error);
+ModelInstantiationException.prototype.name = 'ModelInstantiationException';
+
+var RepositoryException = function (message, constructor) {
+	Error.captureStackTrace(this, constructor || this);
+	this.message = message || "There was an error in the repository!";
+};
+
+inherits(RepositoryException, Error);
+RepositoryException.prototype.name = 'RepositoryException';
+
 module.exports = {
 	AssertionException: AssertionException,
 	ValidationException: ValidationException,
 	AbstractClassException: AbstractClassException,
 	DeletedModelException: DeletedModelException,
-	UnsavedModelException: UnsavedModelException
+	UnsavedModelException: UnsavedModelException,
+	ModelInstantiationException: ModelInstantiationException,
+	RepositoryException: RepositoryException
 };
 
 
@@ -1516,15 +1818,21 @@ function inherits (ctor, superCtor) {
     }
   });
 }
-},{}],21:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 var api = {},
 	Exceptions = require('./exceptions'),
-	inflection = require('inflection');
+	inflection = require('inflection'),
+	_ = require('underscore');
 
 module.exports = api;
 
-api.assert = function (message, val) {
-	if (val !== true)
+/**
+ * Asserts that the condition passed is true.
+ * @param message
+ * @param condition
+ */
+api.assert = function assert (message, condition) {
+	if (condition !== true)
 		throw new Exceptions.AssertionException(message);
 };
 
@@ -1576,6 +1884,8 @@ api.curry = function (fn, context) {
 };
 
 api.normalizeName = function normalizeName (name) {
+	api.assert("Name must be a string", _.isString(name));
+
 	// Clean up the name and split it up into parts
 	var parts = name.replace(/(\s|\_)+/g, ' ').trim().split(' '),
 		newName, word;
@@ -1599,69 +1909,61 @@ api.normalizeName = function normalizeName (name) {
 	// Camelize and return
 	return inflection.camelize(inflection.underscore(newName), true);
 };
-},{"./class":19,"./exceptions":20,"inflection":26}],22:[function(require,module,exports){
-var RSVP = require('rsvp'),
-	utils = require('./../utils');
 
-var AbstractWrapper = utils.Class.extend({
-	_object: null,
+/**
+ * Overrides the model's method with a new method that has access to original methods
+ * @param model
+ * @param name
+ * @param method
+ */
+api.overrideMethod = function overrideMethod (model, name, method) {
+	var originalMethod = model[name],
+		newMethod = function () {
+			var returnVal;
 
-	init: function (object) {
-		throw new utils.Exceptions.AbstractClassException();
-	},
+			// Check to see if there is an original method. If so, make the original method visible to the decorator
+			if (originalMethod !== undefined) {
+				// Do some awkward hot potato shit with the functions so the decorator has access to the original method
+				model[name] = originalMethod;
 
-	get: function (key) {
-		return this._object.get(key);
-	},
+				// Fire off the method with the proper context
+				returnVal = method.apply(model, arguments);
 
-	set: function (key, value) {
-		return this._object.set(key, value);
-	},
+				// More hot potato to put things back to normal
+				model[name] = newMethod;
 
-	on: function (event, callback) {
-		return this._object.on(event, callback);
-	},
+				return returnVal;
+			}
 
-	trigger: function (event) {
-		return this._object.trigger(event);
-	},
+			// Since there's nothing to override, no funny business
+			return method.apply(model, arguments);
+		};
 
-	save: function () {
-		return this._object.save();
-	},
-
-	delete: function () {
-		return this._object.delete();
-	},
-
-	reload: function () {
-		return this._object.reload();
-	},
-
-	getRawData: function () {
-		return this._object.getData();
-	}
-});
-
-module.exports = AbstractWrapper;
-},{"./../utils":21,"rsvp":"psHlfu"}],23:[function(require,module,exports){
-module.exports = {
-	abstract: require('./abstract'),
-	vanilla: require('./vanilla')
+	model[name] = newMethod;
 };
-},{"./abstract":22,"./vanilla":24}],24:[function(require,module,exports){
-var RSVP = require('rsvp'),
-	utils = require('./../utils'),
-	AbstractWrapper = require('./abstract');
 
-var VanillaWrapper = AbstractWrapper.extend({
-	init: function (object) {
-		this._object = object;
-	}
-});
+api.decorateObject = function decorateObject (obj, decorations) {
+	// Apply the decorations
+	_.each(decorations, function (decoration) {
+		// Override the methods
+		_.each(decoration, function (method, name) {
+			api.assert("Decorator method must be a function!", _.isFunction(method));
+			api.overrideMethod(obj, name, method);
+		});
+	});
 
-module.exports = VanillaWrapper;
-},{"./../utils":21,"./abstract":22,"rsvp":"psHlfu"}],25:[function(require,module,exports){
+	return obj;
+};
+
+api.instantiateModel = function instantiateModel (orm, model, data, isNew) {
+	var obj = new model(data, isNew),
+		decorations = orm.getDecorations();
+
+	api.decorateObject(obj, decorations);
+
+	return obj;
+};
+},{"./class":22,"./exceptions":23,"inflection":26,"underscore":"69U/Pa"}],25:[function(require,module,exports){
 
 },{}],26:[function(require,module,exports){
 /*!
@@ -1907,7 +2209,7 @@ module.exports = VanillaWrapper;
    *     var inflection = require( 'inflection' );
    *
    *     inflection.pluralize( 'person' ); // === 'people'
-   *     inflection.pluralize( 'octopus' ); // === "octopi"
+   *     inflection.pluralize( 'octopus' ); // === 'octopi'
    *     inflection.pluralize( 'Hat' ); // === 'Hats'
    *     inflection.pluralize( 'person', 'guys' ); // === 'guys'
    */
@@ -1929,7 +2231,7 @@ module.exports = VanillaWrapper;
    *     var inflection = require( 'inflection' );
    *
    *     inflection.singularize( 'people' ); // === 'person'
-   *     inflection.singularize( 'octopi' ); // === "octopus"
+   *     inflection.singularize( 'octopi' ); // === 'octopus'
    *     inflection.singularize( 'Hats' ); // === 'Hat'
    *     inflection.singularize( 'guys', 'person' ); // === 'person'
    */
@@ -2213,7 +2515,7 @@ module.exports = VanillaWrapper;
    * @public
    * @function
    * @param {String} str The subject string.
-   * @returns {String} Return all found numbers their sequence like "22nd".
+   * @returns {String} Return all found numbers their sequence like '22nd'.
    * @example
    *
    *     var inflection = require( 'inflection' );
@@ -2248,6 +2550,34 @@ module.exports = VanillaWrapper;
       }
 
       return str_arr.join( ' ' );
+    },
+
+  /**
+   * This function performs multiple inflection methods on a string
+   * @public
+   * @function
+   * @param {String} str The subject string.
+   * @param {Array} arr An array of inflection methods.
+   * @returns {String}
+   * @example
+   *
+   *     var inflection = require( 'inflection' );
+   *
+   *     inflection.transform( 'all job', [ 'pluralize', 'capitalize', 'dasherize' ]); // === 'All-jobs'
+   */
+    transform : function ( str, arr ){
+      var i = 0;
+      var j = arr.length;
+
+      for( ;i < j; i++ ){
+        var method = arr[ i ];
+
+        if( this.hasOwnProperty( method )){
+          str = this[ method ]( str );
+        }
+      }
+
+      return str;
     }
   };
 
@@ -2256,7 +2586,7 @@ module.exports = VanillaWrapper;
 /**
  * @public
  */
-  inflector.version = "1.2.5";
+  inflector.version = '1.2.7';
 /**
  * Exports module.
  */
