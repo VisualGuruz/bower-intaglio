@@ -4,6 +4,7 @@ var RSVP = require('rsvp');
 RSVP.configure('onerror', function (error) {
 	console.error(error.message);
 	console.error(error.stack);
+	throw(error);
 });
 
 module.exports = {
@@ -218,7 +219,7 @@ var BaseModel = utils.Class.extend({
 			}
 			else {
 				if (self.getFieldsPendingChange().length === 0)
-					return resolve(utils.decorateObject(self, self._orm.getDecorations()));
+					return resolve(self);
 
 				savePromise = self._repository.save(self._model, self._model.translateObjectToRepository(self._originalData), self._model.translateObjectToRepository(self._data));
 			}
@@ -226,7 +227,7 @@ var BaseModel = utils.Class.extend({
 			savePromise.then(function (data) {
 				self._parseData(self._model.translateObjectToOrm(data));
 
-				return resolve(utils.decorateObject(self, self._orm.getDecorations()));
+				return resolve(self);
 			}, reject);
 		});
 	},
@@ -261,12 +262,10 @@ var BaseModel = utils.Class.extend({
 		self.trigger('reload');
 
 		return new RSVP.Promise(function (resolve, reject) {
-			var conditions = [];
-
 			self._repository.reload(self._model, self._model.translateObjectToRepository(self._data)).then(function (data) {
 				self._parseData(self._model.translateObjectToOrm(data));
 				
-				return resolve(utils.decorateObject(self, self._orm.getDecorations()));
+				return resolve(self);
 			}, reject);
 		});
 	},
@@ -335,7 +334,7 @@ var BaseModel = utils.Class.extend({
 		var self = this;
 
 		if (isNew === undefined)
-			isNew = true;
+			isNew = false;
 
 		// Mark it as no longer new
 		self._isNew = isNew;
@@ -414,7 +413,7 @@ var Factory = utils.Class.extend({
 	},
 
 	create: function (data) {
-		return utils.instantiateModel(this._orm, this._model, data);
+		return utils.instantiateModel(this._orm, this._model, data, true);
 	},
 
 	find: function (id) {
@@ -438,9 +437,7 @@ var Factory = utils.Class.extend({
 				if (result.length === 0)
 					return resolve(null);
 
-				var model = utils.instantiateModel(self._orm, self._model, self._modelSchema.translateObjectToOrm(result[0]), false);
-
-				model._isNew = false;
+				var model = utils.instantiateModel(self._orm, self._model, self._modelSchema.translateObjectToOrm(result[0]));
 
 				return resolve(model);
 			}, reject);
@@ -458,10 +455,8 @@ var Factory = utils.Class.extend({
 
 				_.each(result, function (data) {
 					try {
-						var model = utils.instantiateModel(self._orm, self._model, self._modelSchema.translateObjectToOrm(data), false);
+						var model = utils.instantiateModel(self._orm, self._model, self._modelSchema.translateObjectToOrm(data));
 
-						model._isNew = false;
-						
 						items.push(model);
 					}
 					catch (err) {
@@ -1049,7 +1044,7 @@ var REST = AbstractRepository.extend({
 	_driver: null,
 
 	init: function (driverModule, loggerModule) {
-		utils.assert("A driver must be provided!", driverModule !== undefined)
+		utils.assert("A driver must be provided!", driverModule !== undefined);
 		this._logger = loggerModule || console;
 
 		this._driver = driverModule;
@@ -1230,7 +1225,7 @@ var REST = AbstractRepository.extend({
 
 			// Build the where
 			_.each(model.getPrimaryKey(), function (value) {
-				conditions.push(new self.where.isEqual(value, data[value]));
+				conditions.push(new self.where.isEqual(value.getOriginalName(), data[value.getOriginalName()]));
 			});
 			
 			self.find(model, {limit: 1}, conditions).then(function (newData) {
@@ -1280,7 +1275,10 @@ function buildUrl(queryObj) {
 	if (query.offset)
 		url+='&_offset='+query.offset;
 
-	return url;
+	if (url.length === 0)
+		return '';
+
+	return '?'+url;
 }
 
 function parseWhereToQueryString (whereArray) {
@@ -1293,7 +1291,7 @@ function parseWhereToQueryString (whereArray) {
 		where.push(value.toQuery());
 	});
 
-	return '?'+where.join('&');
+	return where.join('&');
 }
 },{"./../../schema":18,"./../../utils":24,"./../abstract/repository":9,"./driver/jquery":12,"./driver/mock":25,"./driver/node":13,"./where":16,"rsvp":"psHlfu","underscore":"69U/Pa"}],16:[function(require,module,exports){
 var AbstractWhere = require('./../abstract/where'),
@@ -1917,26 +1915,21 @@ api.normalizeName = function normalizeName (name) {
  * @param method
  */
 api.overrideMethod = function overrideMethod (model, name, method) {
-	var originalMethod = model[name],
+	var originalMethod = model[name] || api.noop,
 		newMethod = function () {
 			var returnVal;
 
-			// Check to see if there is an original method. If so, make the original method visible to the decorator
-			if (originalMethod !== undefined) {
-				// Do some awkward hot potato shit with the functions so the decorator has access to the original method
-				model[name] = originalMethod;
+			// Store the _super() method to revert things back to as they were
+			var tmp = model._super;
 
-				// Fire off the method with the proper context
-				returnVal = method.apply(model, arguments);
+			model._super = originalMethod;
 
-				// More hot potato to put things back to normal
-				model[name] = newMethod;
+			// Fire off the method with the proper context
+			returnVal = method.apply(model, arguments);
 
-				return returnVal;
-			}
+			model._super = tmp;
 
-			// Since there's nothing to override, no funny business
-			return method.apply(model, arguments);
+			return returnVal;
 		};
 
 	model[name] = newMethod;
@@ -1962,6 +1955,10 @@ api.instantiateModel = function instantiateModel (orm, model, data, isNew) {
 	api.decorateObject(obj, decorations);
 
 	return obj;
+};
+
+api.noop = function noop () {
+	/* NOOP */
 };
 },{"./class":22,"./exceptions":23,"inflection":26,"underscore":"69U/Pa"}],25:[function(require,module,exports){
 
