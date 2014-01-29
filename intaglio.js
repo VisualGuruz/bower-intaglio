@@ -4,7 +4,6 @@ var RSVP = require('rsvp');
 RSVP.configure('onerror', function (error) {
 	console.error(error.message);
 	console.error(error.stack);
-	throw(error);
 });
 
 module.exports = {
@@ -36,7 +35,7 @@ var EmberDecorator = {
 		var currentData = this.getData(),
 			self = this;
 
-		this.reload().then(function (obj) {
+		return this._super().then(function (obj) {
 			var newData = obj.getData(),
 				changedFields = [];
 
