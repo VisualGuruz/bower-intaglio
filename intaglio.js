@@ -761,6 +761,23 @@ var AbstractRepository = utils.Class.extend({
 	// Should return a promise interface
 	delete: function (model, primaryKey) {},
 
+	reload: function (model, data) {
+		var self = this;
+
+		return new RSVP.Promise(function (resolve, reject) {
+			var conditions = [];
+
+			// Build the where
+			_.each(model.getPrimaryKey(), function (value) {
+				conditions.push(new self.where.isEqual(value.getOriginalName(), data[value.getOriginalName()]));
+			});
+
+			self.find(model, {limit: 1}, conditions).then(function (newData) {
+				return resolve(newData[0]);
+			}, reject);
+		});
+	},
+
 	_validateFields: function (model, obj) {
 		_.each(model.getProperties(), function (property) {
 			if (property.isRequired())
@@ -1212,23 +1229,6 @@ var REST = AbstractRepository.extend({
 
 			self._driver.delete(url).then(function (result) {
 				resolve(result.data);
-			}, reject);
-		});
-	},
-
-	reload: function (model, data) {
-		var self = this;
-
-		return new RSVP.Promise(function (resolve, reject) {
-			var conditions = [];
-
-			// Build the where
-			_.each(model.getPrimaryKey(), function (value) {
-				conditions.push(new self.where.isEqual(value.getOriginalName(), data[value.getOriginalName()]));
-			});
-			
-			self.find(model, {limit: 1}, conditions).then(function (newData) {
-				return resolve(newData[0]);
 			}, reject);
 		});
 	}
