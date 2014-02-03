@@ -1456,7 +1456,7 @@ module.exports = AbstractSchema.extend({
 	},
 
 	getProperty: function (name) {
-		return this._properties[utils.normalizeName(name)];
+		return this._properties[utils.normalizeName(name, false)];
 	},
 
 	getProperties: function () {
