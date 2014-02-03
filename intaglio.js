@@ -1401,21 +1401,13 @@ classes.isNotNull = AbstractWhere.isNotNull.extend({
 module.exports = classes;
 },{"./../../utils":24,"./../abstract/where":10,"underscore":"69U/Pa"}],17:[function(require,module,exports){
 var utils = require('./../utils'),
-	_ = require('underscore'),
-	inflection = require('inflection');
+	_ = require('underscore');
 
 module.exports = utils.Class.extend({
 	_name: null,
 	_originalName: null,
-	_metadata: null,
 
-	init: function (name, metadata) {
-		// Set the name of the object
-		this._setName(name);
-
-		// Store the metadata
-		this._metadata = metadata || {};
-
+	init: function () {
 		// We don't actually want to instantiate this object, as it is abstract.
 		throw new utils.Exceptions.AbstractClassException();
 	},
@@ -1424,34 +1416,11 @@ module.exports = utils.Class.extend({
 		return this._name;
 	},
 
-	getPluralizedName: function () {
-		var parts = inflection.underscore(this.getName()).split('_');
-
-		if (parts.length === 1)
-			parts[0] = inflection.pluralize(parts[0]);
-		else
-			parts[parts.length - 1] = inflection.pluralize(parts[parts.length - 1]);
-
-		return inflection.camelize(parts.join('_'), true);
-	},
-
 	getOriginalName: function () {
 		return this._originalName;
-	},
-
-	getMetadata: function () {
-		return this._metadata;
-	},
-
-	_setName: function (name) {
-		utils.assert('`name` is a required field!', name !== undefined);
-		utils.assert('`name` must be a string!', _.isString(name));
-
-		this._name = utils.normalizeName(name);
-		this._originalName = name;
 	}
 });
-},{"./../utils":24,"inflection":26,"underscore":"69U/Pa"}],18:[function(require,module,exports){
+},{"./../utils":24,"underscore":"69U/Pa"}],18:[function(require,module,exports){
 module.exports = {
 	Abstract: require('./abstract'),
 	Schema: require('./schema'),
@@ -1462,7 +1431,8 @@ module.exports = {
 var utils = require('./../utils'),
 	_ = require('underscore'),
 	AbstractSchema = require('./abstract'),
-	Property = require('./property');
+	Property = require('./property'),
+	inflection = require('inflection');
 	
 module.exports = AbstractSchema.extend({
 	_properties: null,
@@ -1512,6 +1482,17 @@ module.exports = AbstractSchema.extend({
 		}
 
 		return names;
+	},
+
+	getPluralizedName: function () {
+		var parts = inflection.underscore(this.getName()).split('_');
+
+		if (parts.length === 1)
+			parts[0] = inflection.pluralize(parts[0]);
+		else
+			parts[parts.length - 1] = inflection.pluralize(parts[parts.length - 1]);
+
+		return inflection.camelize(parts.join('_'), true);
 	},
 
 
@@ -1568,16 +1549,26 @@ module.exports = AbstractSchema.extend({
 		});
 
 		return newObj;
+	},
+
+	_setName: function (name) {
+		utils.assert('`name` is a required field!', name !== undefined);
+		utils.assert('`name` must be a string!', _.isString(name));
+
+		this._name = utils.normalizeName(name);
+		this._originalName = name;
 	}
 });
-},{"./../utils":24,"./abstract":17,"./property":20,"underscore":"69U/Pa"}],20:[function(require,module,exports){
+},{"./../utils":24,"./abstract":17,"./property":20,"inflection":26,"underscore":"69U/Pa"}],20:[function(require,module,exports){
 var utils = require('./../utils'),
-	AbstractSchema = require('./abstract');
+	AbstractSchema = require('./abstract'),
+	_ = require('underscore');
 
 module.exports = AbstractSchema.extend({
 	_primaryKey: false,
 	_required: false,
 	_type: "String",
+	_metadata: null,
 
 	init: function (name, type, metadata) {
 		// Set the name of the object
@@ -1615,9 +1606,21 @@ module.exports = AbstractSchema.extend({
 			primaryKey: this.isPrimaryKey(),
 			required: this.isRequired()
 		};
+	},
+
+	getMetadata: function () {
+		return this._metadata;
+	},
+
+	_setName: function (name) {
+		utils.assert('`name` is a required field!', name !== undefined);
+		utils.assert('`name` must be a string!', _.isString(name));
+
+		this._name = utils.normalizeName(name, false);
+		this._originalName = name;
 	}
 });
-},{"./../utils":24,"./abstract":17}],21:[function(require,module,exports){
+},{"./../utils":24,"./abstract":17,"underscore":"69U/Pa"}],21:[function(require,module,exports){
 var utils = require('./../utils'),
 	_ = require('underscore'),
 	SchemaModel = require('./model');
@@ -1880,24 +1883,30 @@ api.curry = function (fn, context) {
 	};
 };
 
-api.normalizeName = function normalizeName (name) {
+api.normalizeName = function normalizeName (name, singularize) {
+	// Set defaults
+	if (singularize === undefined)
+		singularize = true;
+
 	api.assert("Name must be a string", _.isString(name));
 
 	// Clean up the name and split it up into parts
 	var parts = name.replace(/(\s|\_)+/g, ' ').trim().split(' '),
 		newName, word;
 
-	// Singularize it
-	if (parts.length === 1) {
-		// There's only one word in the name
-		parts[0] = inflection.singularize(parts[0]);
-	}
+	// Singularize it if necessary
+	if (singularize) {
+		if (parts.length === 1) {
+			// There's only one word in the name
+			parts[0] = inflection.singularize(parts[0]);
+		}
 
-	else {
-		// Only singularize the last word
-		word = parts.pop();
+		else {
+			// Only singularize the last word
+			word = parts.pop();
 
-		parts.push(inflection.singularize(word));
+			parts.push(inflection.singularize(word));
+		}
 	}
 
 	// Recombine
