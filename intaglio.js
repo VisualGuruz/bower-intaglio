@@ -258,9 +258,12 @@ var BaseModel = utils.Class.extend({
 		// Make sure object isn't deleted
 		this._checkDeleted();
 		
-		var self = this;
+		var self = this, meta = {
+			create: self._isNew,
+			changed: self.getFieldsPendingChange()
+		};
 
-		this.trigger('save');
+		this.trigger('save', meta);
 
 		return new RSVP.Promise(function (resolve, reject) {
 			var savePromise;
@@ -271,7 +274,7 @@ var BaseModel = utils.Class.extend({
 			}
 			else {
 				if (self.getFieldsPendingChange().length === 0) {
-					self.trigger('saved');
+					self.trigger('saved', meta);
 					return resolve(self);
 				}
 				savePromise = self._repository.save(self._model, self._model.translateObjectToRepository(self._originalData), self._model.translateObjectToRepository(self._data));
@@ -280,7 +283,7 @@ var BaseModel = utils.Class.extend({
 			savePromise.then(function (data) {
 				self._parseData(self._model.translateObjectToOrm(data));
 
-				self.trigger('saved');
+				self.trigger('saved', meta);
 				return resolve(self);
 			}, reject);
 		});
@@ -2690,10 +2693,10 @@ api.noop = function noop () {
 module.exports=require('psHlfu');
 },{}],"psHlfu":[function(require,module,exports){
 module.exports = window.RSVP;
-},{}],"underscore":[function(require,module,exports){
-module.exports=require('69U/Pa');
 },{}],"69U/Pa":[function(require,module,exports){
 module.exports = window._;
+},{}],"underscore":[function(require,module,exports){
+module.exports=require('69U/Pa');
 },{}]},{},[1])
 (1)
 });
