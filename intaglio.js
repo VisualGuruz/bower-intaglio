@@ -12,7 +12,7 @@ module.exports = {
 	decorators: require('./lib/decorators'),
 	utils: require('./lib/utils')
 };
-},{"./lib/decorators":3,"./lib/orm":6,"./lib/repositories":11,"./lib/utils":24,"rsvp":undefined}],2:[function(require,module,exports){
+},{"./lib/decorators":3,"./lib/orm":6,"./lib/repositories":11,"./lib/utils":24,"rsvp":"rsvp"}],2:[function(require,module,exports){
 var _ = require('underscore');
 
 var EmberDecorator = {
@@ -83,7 +83,7 @@ var EmberDecorator = {
 };
 
 module.exports = EmberDecorator;
-},{"underscore":undefined}],3:[function(require,module,exports){
+},{"underscore":"underscore"}],3:[function(require,module,exports){
 module.exports = {
 	Ember: require('./ember')
 };
@@ -417,7 +417,7 @@ var BaseModel = utils.Class.extend({
 
 module.exports = BaseModel;
 
-},{"./../utils":24,"rsvp":undefined,"underscore":undefined}],5:[function(require,module,exports){
+},{"./../utils":24,"rsvp":"rsvp","underscore":"underscore"}],5:[function(require,module,exports){
 var utils = require('./../utils'),
 	RSVP = require('rsvp'),
 	_ = require('underscore'),
@@ -535,7 +535,7 @@ var Factory = utils.Class.extend({
 });
 
 module.exports = Factory;
-},{"./../utils":24,"./where":8,"rsvp":undefined,"underscore":undefined}],6:[function(require,module,exports){
+},{"./../utils":24,"./where":8,"rsvp":"rsvp","underscore":"underscore"}],6:[function(require,module,exports){
 var RSVP = require('rsvp'),
 	_ = require('underscore'),
 	ORM = require('./orm'),
@@ -568,7 +568,7 @@ api.ready = function ready(ormHash) {
 };
 
 module.exports = api;
-},{"../repositories":11,"./orm":7,"rsvp":undefined,"underscore":undefined}],7:[function(require,module,exports){
+},{"../repositories":11,"./orm":7,"rsvp":"rsvp","underscore":"underscore"}],7:[function(require,module,exports){
 var RSVP = require('rsvp'),
 	_ = require('underscore'),
 	utils = require('./../utils'),
@@ -745,7 +745,7 @@ function generateModel(orm, model) {
 		}
 	});
 }
-},{"./../utils":24,"./basemodel":4,"./factory":5,"rsvp":undefined,"underscore":undefined}],8:[function(require,module,exports){
+},{"./../utils":24,"./basemodel":4,"./factory":5,"rsvp":"rsvp","underscore":"underscore"}],8:[function(require,module,exports){
 var utils = require('./../utils'),
 	RSVP = require('rsvp'),
 	_ = require('underscore');
@@ -820,7 +820,7 @@ var Where = utils.Class.extend({
 });
 
 module.exports = Where;
-},{"./../utils":24,"rsvp":undefined,"underscore":undefined}],9:[function(require,module,exports){
+},{"./../utils":24,"rsvp":"rsvp","underscore":"underscore"}],9:[function(require,module,exports){
 var RSVP = require('rsvp'),
 	utils = require('./../../utils'),
 	_ = require('underscore');
@@ -880,7 +880,7 @@ var AbstractRepository = utils.Class.extend({
 
 // Export the class
 module.exports = AbstractRepository;
-},{"./../../utils":24,"rsvp":undefined,"underscore":undefined}],10:[function(require,module,exports){
+},{"./../../utils":24,"rsvp":"rsvp","underscore":"underscore"}],10:[function(require,module,exports){
 var utils = require('./../../utils');
 
 var AbstractCondition = utils.Class.extend({
@@ -918,7 +918,7 @@ module.exports = {
 	mysql: require('./mysql'),
 	rest: require('./rest')
 };
-},{"./abstract/repository":9,"./mysql":undefined,"./rest":15}],12:[function(require,module,exports){
+},{"./abstract/repository":9,"./mysql":25,"./rest":15}],12:[function(require,module,exports){
 // Get dependencies
 var RSVP = require('rsvp'),
 	_ = require('underscore'),
@@ -1015,7 +1015,7 @@ var RestJqueryDriver = utils.Class.extend({
 });
 
 module.exports = RestJqueryDriver;
-},{"./../../../utils":24,"./response":14,"rsvp":undefined,"underscore":undefined}],13:[function(require,module,exports){
+},{"./../../../utils":24,"./response":14,"rsvp":"rsvp","underscore":"underscore"}],13:[function(require,module,exports){
 // Get dependencies
 var RSVP = require('rsvp'),
 	_ = require('underscore'),
@@ -1114,7 +1114,7 @@ var RestNodeDriver = utils.Class.extend({
 });
 
 module.exports = RestNodeDriver;
-},{"./../../../utils":24,"./response":14,"request":25,"rsvp":undefined,"underscore":undefined}],14:[function(require,module,exports){
+},{"./../../../utils":24,"./response":14,"request":25,"rsvp":"rsvp","underscore":"underscore"}],14:[function(require,module,exports){
 // Get dependencies
 var utils = require('./../../../utils');
 
@@ -1383,7 +1383,7 @@ function parseWhereToQueryString (whereArray) {
 
 	return where.join('&');
 }
-},{"./../../schema":18,"./../../utils":24,"./../abstract/repository":9,"./driver/jquery":12,"./driver/mock":undefined,"./driver/node":13,"./where":16,"rsvp":undefined,"underscore":undefined}],16:[function(require,module,exports){
+},{"./../../schema":18,"./../../utils":24,"./../abstract/repository":9,"./driver/jquery":12,"./driver/mock":undefined,"./driver/node":13,"./where":16,"rsvp":"rsvp","underscore":"underscore"}],16:[function(require,module,exports){
 var AbstractWhere = require('./../abstract/where'),
 	utils = require('./../../utils'),
 	_ = require('underscore');
@@ -1490,7 +1490,7 @@ classes.isNotNull = AbstractWhere.isNotNull.extend({
 });
 
 module.exports = classes;
-},{"./../../utils":24,"./../abstract/where":10,"underscore":undefined}],17:[function(require,module,exports){
+},{"./../../utils":24,"./../abstract/where":10,"underscore":"underscore"}],17:[function(require,module,exports){
 var utils = require('./../utils'),
 	_ = require('underscore');
 
@@ -1511,7 +1511,7 @@ module.exports = utils.Class.extend({
 		return this._originalName;
 	}
 });
-},{"./../utils":24,"underscore":undefined}],18:[function(require,module,exports){
+},{"./../utils":24,"underscore":"underscore"}],18:[function(require,module,exports){
 module.exports = {
 	Abstract: require('./abstract'),
 	Schema: require('./schema'),
@@ -1650,7 +1650,7 @@ module.exports = AbstractSchema.extend({
 		this._originalName = name;
 	}
 });
-},{"./../utils":24,"./abstract":17,"./property":20,"inflection":26,"underscore":undefined}],20:[function(require,module,exports){
+},{"./../utils":24,"./abstract":17,"./property":20,"inflection":26,"underscore":"underscore"}],20:[function(require,module,exports){
 var utils = require('./../utils'),
 	AbstractSchema = require('./abstract'),
 	_ = require('underscore');
@@ -1711,7 +1711,7 @@ module.exports = AbstractSchema.extend({
 		this._originalName = name;
 	}
 });
-},{"./../utils":24,"./abstract":17,"underscore":undefined}],21:[function(require,module,exports){
+},{"./../utils":24,"./abstract":17,"underscore":"underscore"}],21:[function(require,module,exports){
 var utils = require('./../utils'),
 	_ = require('underscore'),
 	SchemaModel = require('./model');
@@ -1761,7 +1761,7 @@ module.exports = utils.Class.extend({
 		return schema;
 	}
 });
-},{"./../utils":24,"./model":19,"underscore":undefined}],22:[function(require,module,exports){
+},{"./../utils":24,"./model":19,"underscore":"underscore"}],22:[function(require,module,exports){
 /* Simple JavaScript Inheritance
  * By John Resig http://ejohn.org/
  * MIT Licensed.
@@ -2059,7 +2059,7 @@ api.instantiateModel = function instantiateModel (orm, model, data, isNew) {
 api.noop = function noop () {
 	/* NOOP */
 };
-},{"./class":22,"./exceptions":23,"inflection":26,"underscore":undefined}],25:[function(require,module,exports){
+},{"./class":22,"./exceptions":23,"inflection":26,"underscore":"underscore"}],25:[function(require,module,exports){
 
 },{}],26:[function(require,module,exports){
 /*!
@@ -2087,71 +2087,453 @@ api.noop = function noop () {
    * @private
    */
   var uncountable_words = [
-    'equipment', 'information', 'rice', 'money', 'species',
-    'series', 'fish', 'sheep', 'moose', 'deer', 'news'
+    // 'access',
+    'accommodation',
+    'adulthood',
+    'advertising',
+    'advice',
+    'aggression',
+    'aid',
+    'air',
+    'aircraft',
+    'alcohol',
+    'anger',
+    'applause',
+    'arithmetic',
+    // 'art',
+    'assistance',
+    'athletics',
+    // 'attention',
+
+    'bacon',
+    'baggage',
+    // 'ballet',
+    // 'beauty',
+    'beef',
+    // 'beer',
+    // 'behavior',
+    'biology',
+    // 'billiards',
+    'blood',
+    'botany',
+    // 'bowels',
+    'bread',
+    // 'business',
+    'butter',
+
+    'carbon',
+    'cardboard',
+    'cash',
+    'chalk',
+    'chaos',
+    'chess',
+    'crossroads',
+    'countryside',
+
+    // 'damage',
+    'dancing',
+    // 'danger',
+    'deer',
+    // 'delight',
+    // 'dessert',
+    'dignity',
+    'dirt',
+    // 'distribution',
+    'dust',
+
+    'economics',
+    'education',
+    'electricity',
+    // 'employment',
+    // 'energy',
+    'engineering',
+    'enjoyment',
+    // 'entertainment',
+    'envy',
+    'equipment',
+    'ethics',
+    'evidence',
+    'evolution',
+
+    // 'failure',
+    // 'faith',
+    'fame',
+    'fiction',
+    // 'fish',
+    'flour',
+    'flu',
+    'food',
+    // 'freedom',
+    // 'fruit',
+    'fuel',
+    'fun',
+    // 'funeral',
+    'furniture',
+
+    'gallows',
+    'garbage',
+    'garlic',
+    // 'gas',
+    'genetics',
+    // 'glass',
+    'gold',
+    'golf',
+    'gossip',
+    'grammar',
+    // 'grass',
+    'gratitude',
+    'grief',
+    // 'ground',
+    'guilt',
+    'gymnastics',
+
+    // 'hair',
+    'happiness',
+    'hardware',
+    'harm',
+    'hate',
+    'hatred',
+    'health',
+    'heat',
+    // 'height',
+    'help',
+    'homework',
+    'honesty',
+    'honey',
+    'hospitality',
+    'housework',
+    'humour',
+    'hunger',
+    'hydrogen',
+
+    'ice',
+    'importance',
+    'inflation',
+    'information',
+    // 'injustice',
+    'innocence',
+    // 'intelligence',
+    'iron',
+    'irony',
+
+    'jam',
+    // 'jealousy',
+    // 'jelly',
+    'jewelry',
+    // 'joy',
+    'judo',
+    // 'juice',
+    // 'justice',
+
+    'karate',
+    // 'kindness',
+    'knowledge',
+
+    // 'labour',
+    'lack',
+    // 'land',
+    'laughter',
+    'lava',
+    'leather',
+    'leisure',
+    'lightning',
+    'linguine',
+    'linguini',
+    'linguistics',
+    'literature',
+    'litter',
+    'livestock',
+    'logic',
+    'loneliness',
+    // 'love',
+    'luck',
+    'luggage',
+
+    'macaroni',
+    'machinery',
+    'magic',
+    // 'mail',
+    'management',
+    'mankind',
+    'marble',
+    'mathematics',
+    'mayonnaise',
+    'measles',
+    // 'meat',
+    // 'metal',
+    'methane',
+    'milk',
+    'money',
+    // 'moose',
+    'mud',
+    'music',
+    'mumps',
+
+    'nature',
+    'news',
+    'nitrogen',
+    'nonsense',
+    'nurture',
+    'nutrition',
+
+    'obedience',
+    'obesity',
+    // 'oil',
+    'oxygen',
+
+    // 'paper',
+    // 'passion',
+    'pasta',
+    'patience',
+    // 'permission',
+    'physics',
+    'poetry',
+    'pollution',
+    'poverty',
+    // 'power',
+    'pride',
+    // 'production',
+    // 'progress',
+    // 'pronunciation',
+    'psychology',
+    'publicity',
+    'punctuation',
+
+    // 'quality',
+    // 'quantity',
+    'quartz',
+
+    'racism',
+    // 'rain',
+    // 'recreation',
+    'relaxation',
+    'reliability',
+    'research',
+    'respect',
+    'revenge',
+    'rice',
+    'rubbish',
+    'rum',
+
+    'safety',
+    // 'salad',
+    // 'salt',
+    // 'sand',
+    // 'satire',
+    'scenery',
+    'seafood',
+    'seaside',
+    'series',
+    'shame',
+    'sheep',
+    'shopping',
+    // 'silence',
+    'sleep',
+    // 'slang'
+    'smoke',
+    'smoking',
+    'snow',
+    'soap',
+    'software',
+    'soil',
+    // 'sorrow',
+    // 'soup',
+    'spaghetti',
+    // 'speed',
+    'species',
+    // 'spelling',
+    // 'sport',
+    'steam',
+    // 'strength',
+    'stuff',
+    'stupidity',
+    // 'success',
+    // 'sugar',
+    'sunshine',
+    'symmetry',
+
+    // 'tea',
+    'tennis',
+    'thirst',
+    'thunder',
+    'timber',
+    // 'time',
+    // 'toast',
+    // 'tolerance',
+    // 'trade',
+    'traffic',
+    'transportation',
+    // 'travel',
+    'trust',
+
+    // 'understanding',
+    'underwear',
+    'unemployment',
+    'unity',
+    // 'usage',
+
+    'validity',
+    'veal',
+    'vegetation',
+    'vegetarianism',
+    'vengeance',
+    'violence',
+    // 'vision',
+    'vitality',
+
+    'warmth',
+    // 'water',
+    'wealth',
+    'weather',
+    // 'weight',
+    'welfare',
+    'wheat',
+    // 'whiskey',
+    // 'width',
+    'wildlife',
+    // 'wine',
+    'wisdom',
+    // 'wood',
+    // 'wool',
+    // 'work',
+
+    // 'yeast',
+    'yoga',
+
+    'zinc',
+    'zoology'
   ];
 
   /**
    * @description These rules translate from the singular form of a noun to its plural form.
    * @private
    */
+
+  var regex = {
+    plural : {
+      men       : new RegExp( '^(m)en$'    , 'gi' ),
+      people    : new RegExp( '(pe)ople$'  , 'gi' ),
+      children  : new RegExp( '(child)ren$', 'gi' ),
+      tia       : new RegExp( '([ti])a$'   , 'gi' ),
+      analyses  : new RegExp( '((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$','gi' ),
+      hives     : new RegExp( '(hi|ti)ves$'       , 'gi' ),
+      curves    : new RegExp( '(curve)s$'         , 'gi' ),
+      lrves     : new RegExp( '([lr])ves$'        , 'gi' ),
+      foves     : new RegExp( '([^fo])ves$'       , 'gi' ),
+      movies    : new RegExp( '(m)ovies$'         , 'gi' ),
+      aeiouyies : new RegExp( '([^aeiouy]|qu)ies$', 'gi' ),
+      series    : new RegExp( '(s)eries$'         , 'gi' ),
+      xes       : new RegExp( '(x|ch|ss|sh)es$'   , 'gi' ),
+      mice      : new RegExp( '([m|l])ice$'       , 'gi' ),
+      buses     : new RegExp( '(bus)es$'          , 'gi' ),
+      oes       : new RegExp( '(o)es$'            , 'gi' ),
+      shoes     : new RegExp( '(shoe)s$'          , 'gi' ),
+      crises    : new RegExp( '(cris|ax|test)es$' , 'gi' ),
+      octopi    : new RegExp( '(octop|vir)i$'     , 'gi' ),
+      aliases   : new RegExp( '(alias|status)es$' , 'gi' ),
+      summonses : new RegExp( '^(summons)es$'     , 'gi' ),
+      oxen      : new RegExp( '^(ox)en'           , 'gi' ),
+      matrices  : new RegExp( '(matr)ices$'       , 'gi' ),
+      vertices  : new RegExp( '(vert|ind)ices$'   , 'gi' ),
+      feet      : new RegExp( '^feet$'            , 'gi' ),
+      teeth     : new RegExp( '^teeth$'           , 'gi' ),
+      geese     : new RegExp( '^geese$'           , 'gi' ),
+      quizzes   : new RegExp( '(quiz)zes$'        , 'gi' ),
+      whereases : new RegExp( '^(whereas)es$'     , 'gi' ),
+      ss        : new RegExp( 'ss$'               , 'gi' ),
+      s         : new RegExp( 's$'                , 'gi' )
+    },
+
+    singular : {
+      man     : new RegExp( '^(m)an$'               , 'gi' ),
+      person  : new RegExp( '(pe)rson$'             , 'gi' ),
+      child   : new RegExp( '(child)$'              , 'gi' ),
+      ox      : new RegExp( '^(ox)$'                , 'gi' ),
+      axis    : new RegExp( '(ax|test)is$'          , 'gi' ),
+      octopus : new RegExp( '(octop|vir)us$'        , 'gi' ),
+      alias   : new RegExp( '(alias|status)$'       , 'gi' ),
+      summons : new RegExp( '^(summons)$'           , 'gi' ),
+      bus     : new RegExp( '(bu)s$'                , 'gi' ),
+      buffalo : new RegExp( '(buffal|tomat|potat)o$', 'gi' ),
+      tium    : new RegExp( '([ti])um$'             , 'gi' ),
+      sis     : new RegExp( 'sis$'                  , 'gi' ),
+      ffe     : new RegExp( '(?:([^f])fe|([lr])f)$' , 'gi' ),
+      hive    : new RegExp( '(hi|ti)ve$'            , 'gi' ),
+      aeiouyy : new RegExp( '([^aeiouy]|qu)y$'      , 'gi' ),
+      x       : new RegExp( '(x|ch|ss|sh)$'         , 'gi' ),
+      matrix  : new RegExp( '(matr)ix$'             , 'gi' ),
+      vertex  : new RegExp( '(vert|ind)ex$'         , 'gi' ),
+      mouse   : new RegExp( '([m|l])ouse$'          , 'gi' ),
+      foot    : new RegExp( '^foot$'                , 'gi' ),
+      tooth   : new RegExp( '^tooth$'               , 'gi' ),
+      goose   : new RegExp( '^goose$'               , 'gi' ),
+      quiz    : new RegExp( '(quiz)$'               , 'gi' ),
+      whereas : new RegExp( '^(whereas)$'           , 'gi' ),
+      s       : new RegExp( 's$'                    , 'gi' ),
+      common  : new RegExp( '$'                     , 'gi' )
+    }
+  };
+
   var plural_rules = [
 
     // do not replace if its already a plural word
-    [ new RegExp( '(m)en$',      'gi' )],
-    [ new RegExp( '(pe)ople$',   'gi' )],
-    [ new RegExp( '(child)ren$', 'gi' )],
-    [ new RegExp( '([ti])a$',    'gi' )],
-    [ new RegExp( '((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$','gi' )],
-    [ new RegExp( '(hive)s$',           'gi' )],
-    [ new RegExp( '(tive)s$',           'gi' )],
-    [ new RegExp( '(curve)s$',          'gi' )],
-    [ new RegExp( '([lr])ves$',         'gi' )],
-    [ new RegExp( '([^fo])ves$',        'gi' )],
-    [ new RegExp( '([^aeiouy]|qu)ies$', 'gi' )],
-    [ new RegExp( '(s)eries$',          'gi' )],
-    [ new RegExp( '(m)ovies$',          'gi' )],
-    [ new RegExp( '(x|ch|ss|sh)es$',    'gi' )],
-    [ new RegExp( '([m|l])ice$',        'gi' )],
-    [ new RegExp( '(bus)es$',           'gi' )],
-    [ new RegExp( '(o)es$',             'gi' )],
-    [ new RegExp( '(shoe)s$',           'gi' )],
-    [ new RegExp( '(cris|ax|test)es$',  'gi' )],
-    [ new RegExp( '(octop|vir)i$',      'gi' )],
-    [ new RegExp( '(alias|status)es$',  'gi' )],
-    [ new RegExp( '^(ox)en',            'gi' )],
-    [ new RegExp( '(vert|ind)ices$',    'gi' )],
-    [ new RegExp( '(matr)ices$',        'gi' )],
-    [ new RegExp( '^feet$',             'gi' )],
-    [ new RegExp( '^teeth$',            'gi' )],
-    [ new RegExp( '^geese$',            'gi' )],
-    [ new RegExp( '(quiz)zes$',         'gi' )],
+    [ regex.plural.men       ],
+    [ regex.plural.people    ],
+    [ regex.plural.children  ],
+    [ regex.plural.tia       ],
+    [ regex.plural.analyses  ],
+    [ regex.plural.hives     ],
+    [ regex.plural.curves    ],
+    [ regex.plural.lrves     ],
+    [ regex.plural.foves     ],
+    [ regex.plural.aeiouyies ],
+    [ regex.plural.series    ],
+    [ regex.plural.movies    ],
+    [ regex.plural.xes       ],
+    [ regex.plural.mice      ],
+    [ regex.plural.buses     ],
+    [ regex.plural.oes       ],
+    [ regex.plural.shoes     ],
+    [ regex.plural.crises    ],
+    [ regex.plural.octopi    ],
+    [ regex.plural.aliases   ],
+    [ regex.plural.summonses ],
+    [ regex.plural.oxen      ],
+    [ regex.plural.matrices  ],
+    [ regex.plural.feet      ],
+    [ regex.plural.teeth     ],
+    [ regex.plural.geese     ],
+    [ regex.plural.quizzes   ],
+    [ regex.plural.whereases ],
 
     // original rule
-    [ new RegExp( '(m)an$', 'gi' ),                 '$1en' ],
-    [ new RegExp( '(pe)rson$', 'gi' ),              '$1ople' ],
-    [ new RegExp( '(child)$', 'gi' ),               '$1ren' ],
-    [ new RegExp( '^(ox)$', 'gi' ),                 '$1en' ],
-    [ new RegExp( '(ax|test)is$', 'gi' ),           '$1es' ],
-    [ new RegExp( '(octop|vir)us$', 'gi' ),         '$1i' ],
-    [ new RegExp( '(alias|status)$', 'gi' ),        '$1es' ],
-    [ new RegExp( '(bu)s$', 'gi' ),                 '$1ses' ],
-    [ new RegExp( '(buffal|tomat|potat)o$', 'gi' ), '$1oes' ],
-    [ new RegExp( '([ti])um$', 'gi' ),              '$1a' ],
-    [ new RegExp( 'sis$', 'gi' ),                   'ses' ],
-    [ new RegExp( '(?:([^f])fe|([lr])f)$', 'gi' ),  '$1$2ves' ],
-    [ new RegExp( '(hive)$', 'gi' ),                '$1s' ],
-    [ new RegExp( '([^aeiouy]|qu)y$', 'gi' ),       '$1ies' ],
-    [ new RegExp( '(x|ch|ss|sh)$', 'gi' ),          '$1es' ],
-    [ new RegExp( '(matr|vert|ind)ix|ex$', 'gi' ),  '$1ices' ],
-    [ new RegExp( '([m|l])ouse$', 'gi' ),           '$1ice' ],
-    [ new RegExp( '^foot$', 'gi' ),                 'feet' ],
-    [ new RegExp( '^tooth$', 'gi' ),                'teeth' ],
-    [ new RegExp( '^goose$', 'gi' ),                'geese' ],
-    [ new RegExp( '(quiz)$', 'gi' ),                '$1zes' ],
+    [ regex.singular.man    , '$1en' ],
+    [ regex.singular.person , '$1ople' ],
+    [ regex.singular.child  , '$1ren' ],
+    [ regex.singular.ox     , '$1en' ],
+    [ regex.singular.axis   , '$1es' ],
+    [ regex.singular.octopus, '$1i' ],
+    [ regex.singular.alias  , '$1es' ],
+    [ regex.singular.summons, '$1es' ],
+    [ regex.singular.bus    , '$1ses' ],
+    [ regex.singular.buffalo, '$1oes' ],
+    [ regex.singular.tium   , '$1a' ],
+    [ regex.singular.sis    , 'ses' ],
+    [ regex.singular.ffe    , '$1$2ves' ],
+    [ regex.singular.hive   , '$1ves' ],
+    [ regex.singular.aeiouyy, '$1ies' ],
+    [ regex.singular.x      , '$1es' ],
+    [ regex.singular.matrix , '$1ices' ],
+    [ regex.singular.vertex , '$1ices' ],
+    [ regex.singular.mouse  , '$1ice' ],
+    [ regex.singular.foot   , 'feet' ],
+    [ regex.singular.tooth  , 'teeth' ],
+    [ regex.singular.goose  , 'geese' ],
+    [ regex.singular.quiz   , '$1zes' ],
+    [ regex.singular.whereas, '$1es' ],
 
-    [ new RegExp( 's$', 'gi' ), 's' ],
-    [ new RegExp( '$', 'gi' ),  's' ]
+    [ regex.singular.s     , 's' ],
+    [ regex.singular.common, 's' ]
   ];
 
   /**
@@ -2161,59 +2543,63 @@ api.noop = function noop () {
   var singular_rules = [
 
     // do not replace if its already a singular word
-    [ new RegExp( '(m)an$',                 'gi' )],
-    [ new RegExp( '(pe)rson$',              'gi' )],
-    [ new RegExp( '(child)$',               'gi' )],
-    [ new RegExp( '^(ox)$',                 'gi' )],
-    [ new RegExp( '(ax|test)is$',           'gi' )],
-    [ new RegExp( '(octop|vir)us$',         'gi' )],
-    [ new RegExp( '(alias|status)$',        'gi' )],
-    [ new RegExp( '(bu)s$',                 'gi' )],
-    [ new RegExp( '(buffal|tomat|potat)o$', 'gi' )],
-    [ new RegExp( '([ti])um$',              'gi' )],
-    [ new RegExp( 'sis$',                   'gi' )],
-    [ new RegExp( '(?:([^f])fe|([lr])f)$',  'gi' )],
-    [ new RegExp( '(hive)$',                'gi' )],
-    [ new RegExp( '([^aeiouy]|qu)y$',       'gi' )],
-    [ new RegExp( '(x|ch|ss|sh)$',          'gi' )],
-    [ new RegExp( '(matr|vert|ind)ix|ex$',  'gi' )],
-    [ new RegExp( '([m|l])ouse$',           'gi' )],
-    [ new RegExp( '^foot$',                 'gi' )],
-    [ new RegExp( '^tooth$',                'gi' )],
-    [ new RegExp( '^goose$',                'gi' )],
-    [ new RegExp( '(quiz)$',                'gi' )],
+    [ regex.singular.man     ],
+    [ regex.singular.person  ],
+    [ regex.singular.child   ],
+    [ regex.singular.ox      ],
+    [ regex.singular.axis    ],
+    [ regex.singular.octopus ],
+    [ regex.singular.alias   ],
+    [ regex.singular.summons ],
+    [ regex.singular.bus     ],
+    [ regex.singular.buffalo ],
+    [ regex.singular.tium    ],
+    [ regex.singular.sis     ],
+    [ regex.singular.ffe     ],
+    [ regex.singular.hive    ],
+    [ regex.singular.aeiouyy ],
+    [ regex.singular.x       ],
+    [ regex.singular.matrix  ],
+    [ regex.singular.mouse   ],
+    [ regex.singular.foot    ],
+    [ regex.singular.tooth   ],
+    [ regex.singular.goose   ],
+    [ regex.singular.quiz    ],
+    [ regex.singular.whereas ],
 
     // original rule
-    [ new RegExp( '(m)en$', 'gi' ),                                                       '$1an' ],
-    [ new RegExp( '(pe)ople$', 'gi' ),                                                    '$1rson' ],
-    [ new RegExp( '(child)ren$', 'gi' ),                                                  '$1' ],
-    [ new RegExp( '([ti])a$', 'gi' ),                                                     '$1um' ],
-    [ new RegExp( '((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$','gi' ), '$1$2sis' ],
-    [ new RegExp( '(hive)s$', 'gi' ),                                                     '$1' ],
-    [ new RegExp( '(tive)s$', 'gi' ),                                                     '$1' ],
-    [ new RegExp( '(curve)s$', 'gi' ),                                                    '$1' ],
-    [ new RegExp( '([lr])ves$', 'gi' ),                                                   '$1f' ],
-    [ new RegExp( '([^fo])ves$', 'gi' ),                                                  '$1fe' ],
-    [ new RegExp( '(m)ovies$', 'gi' ),                                                    '$1ovie' ],
-    [ new RegExp( '([^aeiouy]|qu)ies$', 'gi' ),                                           '$1y' ],
-    [ new RegExp( '(s)eries$', 'gi' ),                                                    '$1eries' ],
-    [ new RegExp( '(x|ch|ss|sh)es$', 'gi' ),                                              '$1' ],
-    [ new RegExp( '([m|l])ice$', 'gi' ),                                                  '$1ouse' ],
-    [ new RegExp( '(bus)es$', 'gi' ),                                                     '$1' ],
-    [ new RegExp( '(o)es$', 'gi' ),                                                       '$1' ],
-    [ new RegExp( '(shoe)s$', 'gi' ),                                                     '$1' ],
-    [ new RegExp( '(cris|ax|test)es$', 'gi' ),                                            '$1is' ],
-    [ new RegExp( '(octop|vir)i$', 'gi' ),                                                '$1us' ],
-    [ new RegExp( '(alias|status)es$', 'gi' ),                                            '$1' ],
-    [ new RegExp( '^(ox)en', 'gi' ),                                                      '$1' ],
-    [ new RegExp( '(vert|ind)ices$', 'gi' ),                                              '$1ex' ],
-    [ new RegExp( '(matr)ices$', 'gi' ),                                                  '$1ix' ],
-    [ new RegExp( '^feet$', 'gi' ),                                                       'foot' ],
-    [ new RegExp( '^teeth$', 'gi' ),                                                      'tooth' ],
-    [ new RegExp( '^geese$', 'gi' ),                                                      'goose' ],
-    [ new RegExp( '(quiz)zes$', 'gi' ),                                                   '$1' ],
-    [ new RegExp( 'ss$', 'gi' ),                                                          'ss' ],
-    [ new RegExp( 's$', 'gi' ),                                                           '' ]
+    [ regex.plural.men      , '$1an' ],
+    [ regex.plural.people   , '$1rson' ],
+    [ regex.plural.children , '$1' ],
+    [ regex.plural.tia      , '$1um' ],
+    [ regex.plural.analyses , '$1$2sis' ],
+    [ regex.plural.hives    , '$1ve' ],
+    [ regex.plural.curves   , '$1' ],
+    [ regex.plural.lrves    , '$1f' ],
+    [ regex.plural.foves    , '$1fe' ],
+    [ regex.plural.movies   , '$1ovie' ],
+    [ regex.plural.aeiouyies, '$1y' ],
+    [ regex.plural.series   , '$1eries' ],
+    [ regex.plural.xes      , '$1' ],
+    [ regex.plural.mice     , '$1ouse' ],
+    [ regex.plural.buses    , '$1' ],
+    [ regex.plural.oes      , '$1' ],
+    [ regex.plural.shoes    , '$1' ],
+    [ regex.plural.crises   , '$1is' ],
+    [ regex.plural.octopi   , '$1us' ],
+    [ regex.plural.aliases  , '$1' ],
+    [ regex.plural.summonses, '$1' ],
+    [ regex.plural.oxen     , '$1' ],
+    [ regex.plural.matrices , '$1ix' ],
+    [ regex.plural.vertices , '$1ex' ],
+    [ regex.plural.feet     , 'foot' ],
+    [ regex.plural.teeth    , 'tooth' ],
+    [ regex.plural.geese    , 'goose' ],
+    [ regex.plural.quizzes  , '$1' ],
+    [ regex.plural.whereases, '$1' ],
+
+    [ regex.plural.ss, 'ss' ],
+    [ regex.plural.s , '' ]
   ];
 
   /**
@@ -2523,11 +2909,11 @@ api.noop = function noop () {
 
 
   /**
-   * This function adds dasherization support to every String object.
+   * This function replaces underscores with dashes in the string.
    * @public
    * @function
    * @param {String} str The subject string.
-   * @returns {String} Replaces all spaces or underbars with dashes.
+   * @returns {String} Replaces all spaces or underscores with dashes.
    * @example
    *
    *     var inflection = require( 'inflection' );
@@ -2743,7 +3129,7 @@ api.noop = function noop () {
 /**
  * @public
  */
-  inflector.version = '1.4.2';
+  inflector.version = '1.5.3';
 
   return inflector;
 }));
